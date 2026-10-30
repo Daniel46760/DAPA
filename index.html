@@ -1,0 +1,1286 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>大安音控 DAPA 點名記錄系統</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+    
+    <!-- Firebase SDKs (Compat Version for maximum reliability in iFrame/Single File) -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            dark: '#0f172a',
+                            card: '#1e293b',
+                            accent: '#38bdf8'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'Noto Sans TC', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Inter', 'Noto Sans TC', sans-serif;
+            background-color: #0f172a;
+            color: #f8fafc;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .glass-header {
+            background: rgba(15, 23, 42, 0.92);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+        .glass-card {
+            background: rgba(30, 41, 59, 0.75);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .drawer-overlay {
+            transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
+        }
+        .drawer-content {
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        /* 選取列效果 */
+        .selected-row {
+            background-color: rgba(56, 189, 248, 0.15) !important;
+            /* 將 border-left 改為 box-shadow 內側陰影 */
+            box-shadow: inset 4px 0 0 0 #38bdf8 !important;
+        }
+        /* 底線風格輸入框 */
+        .underline-input {
+            background: transparent;
+            border: none;
+            border-bottom: 2px solid #475569;
+            border-radius: 0;
+            color: #f8fafc;
+            padding: 8px 4px;
+            width: 100%;
+            transition: border-color 0.2s ease;
+        }
+        .underline-input:focus {
+            outline: none;
+            border-bottom-color: #38bdf8;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between select-none pb-6">
+
+    <!-- Header / 頁頭導覽列 -->
+    <header class="sticky top-0 z-30 glass-header border-b border-slate-800 px-4 py-3 shadow-md">
+        <div class="relative flex items-center justify-between">
+            <!-- 左側：選單鈕 & DAPA Home鈕 -->
+            <div class="flex items-center gap-2 z-10">
+                <button id="open-menu-btn" class="w-9 h-9 flex items-center justify-center rounded-xl bg-slate-800 text-slate-300 hover:text-white active:scale-95 transition border border-slate-700/50">
+                    <i class="fa-solid fa-bars text-base"></i>
+                </button>
+                <button onclick="switchView('home')" class="text-xl font-black tracking-wider text-sky-400 hover:text-sky-300 active:scale-95 transition px-1">
+                    DAPA
+                </button>
+            </div>
+
+            <!-- 中間頁面標題：置中 -->
+            <div class="absolute left-1/2 -translate-x-1/2 flex items-center gap-2 justify-center z-0">
+                <div id="header-title" class="text-xs font-semibold text-slate-300 whitespace-nowrap">
+                    主頁面
+                </div>
+            </div>
+
+            <!-- 右側：雲端狀態 + 成員管理操作按鈕 -->
+            <div class="flex items-center gap-2 z-10 ml-auto">
+                <span id="cloud-status-badge" class="px-2 py-0.5 rounded-full text-[10px] font-medium bg-slate-800 text-slate-400 border border-slate-700 whitespace-nowrap">
+                    <i class="fa-solid fa-circle-notch fa-spin mr-1"></i>連線中
+                </span>
+                    <div id="member-action-btns" class="hidden flex items-center gap-1.5">
+                        <button onclick="triggerDeleteMember()" class="w-8 h-8 flex items-center justify-center rounded-lg bg-red-500/20 text-red-400 hover:bg-red-500/30 border border-red-500/30 active:scale-95 transition" title="刪除選取成員">
+                            <i class="fa-solid fa-trash-can text-xs"></i>
+                        </button>
+                        <button onclick="openModal('edit')" class="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-xs font-semibold active:scale-95 transition">
+                            <i class="fa-solid fa-pen text-sky-400"></i>
+                            <span>修改</span>
+                        </button>
+                        <button onclick="openModal('add')" class="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-sky-500 hover:bg-sky-400 text-slate-950 text-xs font-bold active:scale-95 transition shadow-lg shadow-sky-500/20">
+                            <i class="fa-solid fa-plus"></i>
+                            <span>新增</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- 側邊抽屜選單 -->
+    <div id="drawer-container" class="fixed inset-0 z-50 pointer-events-none">
+        <div id="drawer-backdrop" class="drawer-overlay absolute inset-0 bg-slate-950/70 opacity-0 pointer-events-none transition-opacity duration-300"></div>
+        <aside id="drawer-panel" class="drawer-content absolute top-0 left-0 bottom-0 w-72 bg-slate-900 border-r border-slate-800 flex flex-col -translate-x-full pointer-events-auto shadow-2xl">
+            <div class="p-5 border-b border-slate-800 flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-lg bg-sky-500/10 border border-sky-500/30 flex items-center justify-center text-sky-400">
+                        <i class="fa-solid fa-sliders"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-slate-100 text-sm">DAPA 系統選單</h3>
+                        <p class="text-xs text-slate-400">大安音控管理端</p>
+                    </div>
+                </div>
+                <button id="close-menu-btn" class="w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-white">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+            <nav class="p-4 space-y-2 flex-1">
+                <button onclick="switchView('home')" class="w-full flex items-center gap-3.5 px-4 py-3.5 rounded-xl text-slate-300 hover:bg-slate-800 hover:text-white transition group text-left">
+                    <i class="fa-solid fa-house text-slate-400"></i>
+                    <span class="font-medium text-sm">專案首頁</span>
+                </button>
+                <button onclick="switchView('members')" class="w-full flex items-center gap-3.5 px-4 py-3.5 rounded-xl text-slate-300 hover:bg-slate-800 hover:text-white transition group text-left">
+                    <i class="fa-solid fa-users text-sky-300"></i>
+                    <span class="font-medium text-sm">成員管理</span>
+                </button>
+                <button onclick="switchView('attendance')" class="w-full flex items-center gap-3.5 px-4 py-3.5 rounded-xl text-slate-300 hover:bg-slate-800 hover:text-white transition group text-left">
+                    <i class="fa-solid fa-clipboard-user text-amber-300"></i>
+                    <span class="font-medium text-sm">點名系統</span>
+                </button>
+                <button onclick="switchView('attendance-records')" class="w-full flex items-center gap-3.5 px-4 py-3.5 rounded-xl text-slate-300 hover:bg-slate-800 hover:text-white transition group text-left">
+                    <i class="fa-solid fa-clipboard-list text-violet-300"></i>
+                    <span class="font-medium text-sm">點名紀錄</span>
+                </button>
+                <button onclick="switchView('hours-statistics')" class="w-full flex items-center gap-3.5 px-4 py-3.5 rounded-xl text-slate-300 hover:bg-slate-800 hover:text-white transition group text-left">
+                    <i class="fa-solid fa-chart-simple text-lime-400"></i>
+                    <span class="font-medium text-sm">時數統計</span>
+                </button>
+            </nav>
+            <div class="p-4 border-t border-slate-800 text-xs text-slate-500 text-center">
+                大安音控 DAPA Management v1.2
+            </div>
+        </aside>
+    </div>
+
+    <!-- 主內容容器 -->
+    <main class="flex-1 px-4 py-5 max-w-md mx-auto w-full">
+
+        <!-- 視圖 1: 專案首頁 -->
+        <section id="view-home" class="space-y-5">
+            <div class="glass-card rounded-2xl p-6 border border-slate-800 shadow-xl relative overflow-hidden">
+                <div class="w-12 h-12 rounded-xl bg-sky-500/10 border border-sky-500/30 flex items-center justify-center text-sky-400 text-xl mb-4">
+                    <i class="fa-solid fa-volume-up"></i>
+                </div>
+                <h3 class="text-xl font-bold text-white mb-1">大安音控 DAPA</h3>
+                <h4 class="text-base font-semibold text-sky-400 mb-3">點名記錄系統</h4>
+                <p class="text-xs text-slate-300 leading-relaxed mb-4">
+                    歡迎使用雲端點名管理系統。系統已連結至 Firebase 雲端資料庫，幹部進行之成員編輯與點名紀錄將即時跨裝置同步。
+                </p>
+                
+                <div id="db-notice" class="p-3 rounded-xl bg-slate-800/80 border border-slate-700/60 text-xs text-slate-300 space-y-1">
+                    <div class="font-bold text-sky-400 flex items-center gap-1.5">
+                        <i class="fa-solid fa-database"></i> 雲端資料庫狀態
+                    </div>
+                    <div id="db-notice-text">正在嘗試連線至雲端 Firestore...</div>
+                </div>
+
+                <div class="mt-5 pt-4 border-t border-slate-800/80 space-y-3">
+                    <button onclick="switchView('members')" class="w-full py-2.5 rounded-xl bg-sky-500/10 border border-sky-500/30 text-sky-400 font-bold text-xs hover:bg-sky-500/20 active:scale-98 transition flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-users"></i>
+                        進入「成員管理」頁面
+                    </button>
+                    <button onclick="switchView('attendance')" class="w-full py-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-400 font-bold text-xs hover:bg-amber-500/20 active:scale-98 transition flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-clipboard-user"></i>
+                        進入「點名系統」頁面
+                    </button>
+                    <button onclick="switchView('attendance-records')" class="w-full py-2.5 rounded-xl bg-violet-500/10 border border-violet-500/30 text-violet-300 font-bold text-xs hover:bg-violet-500/20 active:scale-98 transition flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-clipboard-list"></i>
+                        進入「點名紀錄」頁面
+                    </button>
+                    <button onclick="switchView('hours-statistics')" class="w-full py-2.5 rounded-xl bg-lime-500/10 border border-lime-500/30 text-lime-300 font-bold text-xs hover:bg-lime-500/20 active:scale-98 transition flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-chart-simple"></i>
+                        進入「時數統計」頁面
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- 視圖 2: 成員管理頁面 -->
+        <section id="view-members" class="hidden space-y-4">
+            <div class="flex items-center justify-between text-xs text-slate-400 px-1">
+                <span>點擊成員列即可選取以編輯/刪除</span>
+                <span id="member-count" class="font-mono text-sky-400">載入中...</span>
+            </div>
+
+            <!-- 成員表格卡片 -->
+            <div class="glass-card rounded-2xl overflow-hidden border border-slate-800 shadow-xl">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm">
+                        <thead class="bg-slate-800/80 text-xs font-semibold text-slate-300 uppercase border-b border-slate-700/60">
+                            <tr>
+                                <th class="py-3 px-3 w-10 text-center">#</th>
+                                <th class="py-3 px-3">班級</th>
+                                <th class="py-3 px-3">學號</th>
+                                <th class="py-3 px-3">姓名</th>
+                            </tr>
+                        </thead>
+                        <tbody id="member-table-body" class="divide-y divide-slate-800/60">
+                            <tr>
+                                <td colspan="4" class="py-8 text-center text-xs text-slate-400">
+                                    <i class="fa-solid fa-circle-notch fa-spin text-sky-400 text-base mb-2"></i>
+                                    <div>正在載入雲端成員資料...</div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- 視圖 3: 點名系統頁面 -->
+        <section id="view-attendance" class="hidden space-y-4 pb-20">
+            <div class="flex items-center justify-between text-xs text-slate-400 px-1">
+                <span>點擊成員列即可多選，完成後再按右下角確認</span>
+                <span id="attendance-count" class="font-mono text-sky-400">載入中...</span>
+            </div>
+
+            <div class="glass-card rounded-2xl p-3 border border-slate-800 shadow-xl">
+                <label class="block text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400 mb-2">日期</label>
+                <input id="attendance-date" type="date" class="w-full rounded-xl border border-slate-700 bg-slate-900/80 text-slate-100 text-sm px-3 py-2.5 focus:outline-none focus:border-sky-400">
+            </div>
+
+            <div class="glass-card rounded-2xl overflow-hidden border border-slate-800 shadow-xl">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm">
+                        <thead class="bg-slate-800/80 text-xs font-semibold text-slate-300 uppercase border-b border-slate-700/60">
+                            <tr>
+                                <th class="py-3 px-3 w-10 text-center">#</th>
+                                <th class="py-3 px-3">班級</th>
+                                <th class="py-3 px-3">學號</th>
+                                <th class="py-3 px-3">姓名</th>
+                            </tr>
+                        </thead>
+                        <tbody id="attendance-table-body" class="divide-y divide-slate-800/60">
+                            <tr>
+                                <td colspan="4" class="py-8 text-center text-xs text-slate-400">
+                                    <i class="fa-solid fa-circle-notch fa-spin text-sky-400 text-base mb-2"></i>
+                                    <div>正在載入點名名單...</div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <button onclick="confirmAttendance()" class="fixed bottom-5 right-5 z-40 px-5 py-3 rounded-xl bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold text-sm shadow-lg shadow-sky-500/30 active:scale-95 transition">
+                <i class="fa-solid fa-check mr-1.5"></i>確認
+            </button>
+        </section>
+
+        <!-- 視圖 4: 點名紀錄頁面 -->
+        <section id="view-attendance-records" class="hidden space-y-4 pb-20">
+            <div class="glass-card rounded-2xl border border-slate-800 shadow-xl p-3 space-y-3">
+                <div class="flex items-center justify-between gap-3">
+                    <div class="flex-1">
+                        <label class="block text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400 mb-2">日期</label>
+                        <input id="attendance-records-date" type="date" class="h-[42px] w-full rounded-xl border border-slate-700 bg-slate-900/80 text-slate-100 text-sm px-3 py-2.5 focus:outline-none focus:border-violet-400">
+                    </div>
+                    <button onclick="queryAttendanceRecords()" class="self-end flex h-[42px] items-center justify-center px-4 rounded-xl bg-violet-500 hover:bg-violet-400 text-slate-950 font-bold text-xs shadow-lg shadow-violet-500/20 active:scale-95 transition">
+                        查詢
+                    </button>
+                </div>
+
+                <div>
+                    <div class="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400 mb-2">狀態</div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <button type="button" data-status="簽到" onclick="toggleAttendanceRecordStatus('簽到')" class="attendance-status-filter-btn rounded-xl border px-3 py-2 text-xs font-semibold transition active:scale-95 border-slate-700 bg-slate-800 text-slate-200">簽到</button>
+                        <button type="button" data-status="晚到" onclick="toggleAttendanceRecordStatus('晚到')" class="attendance-status-filter-btn rounded-xl border px-3 py-2 text-xs font-semibold transition active:scale-95 border-slate-700 bg-slate-800 text-slate-200">晚到</button>
+                        <button type="button" data-status="早退" onclick="toggleAttendanceRecordStatus('早退')" class="attendance-status-filter-btn rounded-xl border px-3 py-2 text-xs font-semibold transition active:scale-95 border-slate-700 bg-slate-800 text-slate-200">早退</button>
+                        <button type="button" data-status="簽退" onclick="toggleAttendanceRecordStatus('簽退')" class="attendance-status-filter-btn rounded-xl border px-3 py-2 text-xs font-semibold transition active:scale-95 border-slate-700 bg-slate-800 text-slate-200">簽退</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="glass-card rounded-2xl overflow-hidden border border-slate-800 shadow-xl">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm">
+                        <thead class="bg-slate-800/80 text-xs font-semibold text-slate-300 uppercase border-b border-slate-700/60">
+                            <tr>
+                                <th class="py-3 px-3 w-10 text-center">#</th>
+                                <th class="py-3 px-3">班級</th>
+                                <th class="py-3 px-3">學號</th>
+                                <th class="py-3 px-3">姓名</th>
+                                <th class="py-3 px-3">到校 / 離校</th>
+                            </tr>
+                        </thead>
+                        <tbody id="attendance-records-table-body" class="divide-y divide-slate-800/60">
+                            <tr>
+                                <td colspan="5" class="py-8 text-center text-xs text-slate-400">
+                                    尚未查詢，請選擇日期與狀態後點選「查詢」。
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- 視圖 5: 時數統計頁面 -->
+        <section id="view-hours-statistics" class="hidden space-y-4">
+            <div class="glass-card rounded-2xl p-3 border border-slate-800 shadow-xl space-y-3">
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label for="hours-statistics-start-date" class="block text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400 mb-2">開始日期</label>
+                        <input id="hours-statistics-start-date" type="date" class="h-[42px] w-full rounded-xl border border-slate-700 bg-slate-900/80 text-slate-100 text-sm px-3 focus:outline-none focus:border-lime-400">
+                    </div>
+                    <div>
+                        <label for="hours-statistics-end-date" class="block text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400 mb-2">結束日期</label>
+                        <input id="hours-statistics-end-date" type="date" class="h-[42px] w-full rounded-xl border border-slate-700 bg-slate-900/80 text-slate-100 text-sm px-3 focus:outline-none focus:border-lime-400">
+                    </div>
+                </div>
+                <button onclick="queryHoursStatistics()" class="flex h-[42px] w-full items-center justify-center rounded-xl bg-lime-500 hover:bg-lime-400 text-slate-950 font-bold text-xs shadow-lg shadow-lime-500/20 active:scale-95 transition">
+                    <i class="fa-solid fa-magnifying-glass mr-1.5"></i>查詢
+                </button>
+            </div>
+
+            <div class="glass-card rounded-2xl overflow-hidden border border-slate-800 shadow-xl">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm">
+                        <thead class="bg-slate-800/80 text-xs font-semibold text-slate-300 uppercase border-b border-slate-700/60">
+                            <tr>
+                                <th class="py-3 px-3 w-10 text-center">#</th>
+                                <th class="py-3 px-3">班級</th>
+                                <th class="py-3 px-3">學號</th>
+                                <th class="py-3 px-3">姓名</th>
+                                <th class="py-3 px-3 whitespace-nowrap">區間時數</th>
+                            </tr>
+                        </thead>
+                        <tbody id="hours-statistics-table-body" class="divide-y divide-slate-800/60">
+                            <tr>
+                                <td colspan="5" class="py-8 text-center text-xs text-slate-400">
+                                    選擇日期區間後點選「查詢」。
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <div id="attendance-status-modal" class="fixed inset-0 z-50 flex items-center justify-center px-4 bg-slate-950/70 backdrop-blur-sm opacity-0 pointer-events-none transition-opacity duration-200">
+        <div class="glass-card w-full max-w-sm rounded-2xl border border-sky-500/40 p-5 shadow-2xl relative bg-slate-900/95">
+            <div class="text-center text-xl font-bold text-white mb-3">
+                總共 <span id="attendance-total-count" class="text-sky-400">0</span> 人
+            </div>
+
+            <div class="grid grid-cols-2 gap-2">
+                <button onclick="openAttendanceConfirmModal('簽到')" class="px-4 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-sm font-semibold transition active:scale-95">
+                    簽到
+                </button>
+                <button onclick="openAttendanceConfirmModal('晚到')" class="px-4 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-sm font-semibold transition active:scale-95">
+                    晚到
+                </button>
+                <button onclick="openAttendanceConfirmModal('早退')" class="px-4 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-sm font-semibold transition active:scale-95">
+                    早退
+                </button>
+                <button onclick="openAttendanceConfirmModal('簽退')" class="px-4 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-sm font-semibold transition active:scale-95">
+                    簽退
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="attendance-confirm-modal" class="fixed inset-0 z-[60] flex items-center justify-center px-4 bg-slate-950/70 backdrop-blur-sm opacity-0 pointer-events-none transition-opacity duration-200">
+        <div class="glass-card w-full max-w-sm rounded-2xl border border-sky-500/40 p-6 shadow-2xl relative bg-slate-900/95 space-y-4">
+            <div class="w-10 h-10 rounded-xl bg-sky-500/10 text-sky-400 border border-sky-500/30 flex items-center justify-center text-lg">
+                <i class="fa-solid fa-circle-question"></i>
+            </div>
+
+            <h3 id="attendance-confirm-title" class="text-base font-bold text-white">確認(早退)嗎？</h3>
+
+            <p class="text-xs text-slate-300 leading-relaxed">
+                這次點名將標記為 <span id="attendance-confirm-status" class="text-sky-300 font-semibold">早退</span>，共 <span id="attendance-confirm-total" class="text-sky-300 font-semibold">0</span> 人。
+            </p>
+
+            <div class="flex justify-end gap-2 pt-2">
+                <button onclick="closeAttendanceConfirmModal()" class="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 text-xs font-semibold hover:bg-slate-700 transition">
+                    取消
+                </button>
+                <button onclick="submitAttendanceStatus()" class="px-4 py-2 rounded-xl bg-sky-500 hover:bg-sky-400 text-slate-950 text-xs font-bold transition shadow-lg shadow-sky-500/20">
+                    確認
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 新增 / 修改 彈出視窗 Modal -->
+    <div id="form-modal" class="fixed inset-0 z-50 flex items-center justify-center px-4 bg-slate-950/80 backdrop-blur-sm opacity-0 pointer-events-none transition-opacity duration-200">
+        <div class="glass-card w-full max-w-sm rounded-2xl border border-slate-700/80 p-6 shadow-2xl relative bg-slate-900/95 transform scale-95 transition-transform duration-200" id="modal-box">
+            
+            <button onclick="closeModal()" class="absolute top-4 right-4 w-8 h-8 flex items-center justify-center text-slate-400 hover:text-white rounded-lg active:scale-90 transition">
+                <i class="fa-solid fa-xmark text-xl"></i>
+            </button>
+
+            <h3 id="modal-title" class="text-base font-bold text-white mb-6">新增成員</h3>
+
+            <form id="member-form" onsubmit="handleFormSubmit(event)" class="space-y-5">
+                <div class="space-y-1">
+                    <label class="text-xs font-semibold text-slate-400">班級</label>
+                    <input type="text" id="input-class" class="underline-input text-sm" placeholder="請輸入班級 (例：電機二甲)" required>
+                </div>
+
+                <div class="space-y-1">
+                    <label class="text-xs font-semibold text-slate-400">學號</label>
+                    <input type="text" id="input-student-id" class="underline-input font-mono text-sm" placeholder="請輸入學號 (例：1403122)" required>
+                </div>
+
+                <div class="space-y-1">
+                    <label class="text-xs font-semibold text-slate-400">姓名</label>
+                    <input type="text" id="input-name" class="underline-input text-sm" placeholder="請輸入姓名" required>
+                </div>
+
+                <div class="flex justify-end pt-4">
+                    <button type="submit" id="submit-btn" class="px-6 py-2.5 rounded-xl bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold text-sm shadow-lg shadow-sky-500/20 active:scale-95 transition flex items-center gap-2">
+                        <span>確認</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 刪除確認 Modal -->
+
+    <div id="delete-confirm-modal" class="fixed inset-0 z-50 flex items-center justify-center px-4 bg-slate-950/80 backdrop-blur-sm opacity-0 pointer-events-none transition-opacity duration-200">
+
+        <div class="glass-card w-full max-w-sm rounded-2xl border border-red-500/40 p-6 shadow-2xl relative bg-slate-900/95 space-y-4">
+
+            <div class="w-10 h-10 rounded-xl bg-red-500/20 text-red-400 border border-red-500/30 flex items-center justify-center text-lg">
+
+                <i class="fa-solid fa-triangle-exclamation"></i>
+
+            </div>
+
+            <h3 class="text-base font-bold text-white">確認刪除成員？</h3>
+
+            <p id="delete-confirm-text" class="text-xs text-slate-300 leading-relaxed">
+
+                確定要刪除該成員嗎？此操作無法復原。
+
+            </p>
+
+            <div class="flex justify-end gap-2 pt-2">
+
+                <button onclick="closeDeleteModal()" class="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 text-xs font-semibold hover:bg-slate-700 transition">
+
+                    取消
+
+                </button>
+
+                <button id="confirm-delete-btn" onclick="executeDeleteMember()" class="px-4 py-2 rounded-xl bg-red-500 hover:bg-red-400 text-white text-xs font-bold transition shadow-lg shadow-red-500/20">
+
+                    確定刪除
+
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- Firebase 初始化與邏輯程式碼 -->
+    <script>
+        // 1. Firebase 設定金鑰
+        const firebaseConfig = {
+            apiKey: "AIzaSyA4VDxpOQeAKcX78pqrHGXZW4yjq7iRgWQ",
+            authDomain: "dapa-attendance.firebaseapp.com",
+            projectId: "dapa-attendance",
+            storageBucket: "dapa-attendance.firebasestorage.app",
+            messagingSenderId: "182145484504",
+            appId: "1:182145484504:web:0ec4cbe84af69cb71579ad",
+            measurementId: "G-C6P0R28GFW"
+        };
+
+        // 2. 初始化 Firebase
+        let db = null;
+        let members = [];
+        let selectedMemberDocId = null;
+        let selectedAttendanceDocIds = [];
+        let selectedAttendanceRecordStatuses = ['簽到', '晚到', '早退', '簽退'];
+        let currentModalMode = 'add';
+
+        try {
+            firebase.initializeApp(firebaseConfig);
+            db = firebase.firestore();
+        } catch (err) {
+            console.error("Firebase 初始化失敗:", err);
+            updateStatusBadge(false, "初始化失敗");
+        }
+
+        function setTodayAttendanceDate() {
+            const attendanceDateInput = document.getElementById('attendance-date');
+            if (!attendanceDateInput) return;
+
+            const today = new Date();
+            const yyyy = today.getFullYear();
+            const mm = String(today.getMonth() + 1).padStart(2, '0');
+            const dd = String(today.getDate()).padStart(2, '0');
+            attendanceDateInput.value = `${yyyy}-${mm}-${dd}`;
+        }
+
+        function setTodayAttendanceRecordsDate() {
+            const attendanceRecordsDateInput = document.getElementById('attendance-records-date');
+            if (!attendanceRecordsDateInput) return;
+
+            const today = new Date();
+            const yyyy = today.getFullYear();
+            const mm = String(today.getMonth() + 1).padStart(2, '0');
+            const dd = String(today.getDate()).padStart(2, '0');
+            attendanceRecordsDateInput.value = `${yyyy}-${mm}-${dd}`;
+        }
+
+        function syncAttendanceRecordStatusButtons() {
+            const buttons = document.querySelectorAll('.attendance-status-filter-btn');
+            buttons.forEach(btn => {
+                const status = btn.dataset.status;
+                const isSelected = selectedAttendanceRecordStatuses.includes(status);
+                btn.classList.toggle('border-violet-400', isSelected);
+                btn.classList.toggle('bg-violet-500/15', isSelected);
+                btn.classList.toggle('text-violet-300', isSelected);
+                btn.classList.toggle('border-slate-700', !isSelected);
+                btn.classList.toggle('bg-slate-800', !isSelected);
+                btn.classList.toggle('text-slate-200', !isSelected);
+            });
+        }
+
+        function toggleAttendanceRecordStatus(status) {
+            if (selectedAttendanceRecordStatuses.includes(status)) {
+                selectedAttendanceRecordStatuses = selectedAttendanceRecordStatuses.filter(item => item !== status);
+            } else {
+                selectedAttendanceRecordStatuses.push(status);
+            }
+            syncAttendanceRecordStatusButtons();
+        }
+
+        function renderAttendanceRecordsTable(records) {
+            const tbody = document.getElementById('attendance-records-table-body');
+            if (!tbody) return;
+
+            tbody.innerHTML = '';
+
+            if (!records.length) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="5" class="py-8 text-center text-xs text-slate-400">
+                            查無符合條件的點名紀錄。
+                        </td>
+                    </tr>`;
+                return;
+            }
+
+            records.forEach((record, index) => {
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-slate-800/40';
+                const statusBadges = [record.arrivalStatus, record.departureStatus]
+                    .filter(Boolean)
+                    .map(status => {
+                        const statusClass = ['簽到', '簽退'].includes(status) ? 'bg-emerald-500/10 text-emerald-300 border-emerald-500/20' :
+                            status === '晚到' ? 'bg-indigo-600/20 text-indigo-300 border-indigo-500' :
+                            'bg-rose-500/10 text-rose-300 border-rose-500/20';
+                        return `<span class="inline-flex px-1 sm:px-2 py-1 rounded-full text-[9px] sm:text-[10px] font-semibold border whitespace-nowrap ${statusClass}">${status}</span>`;
+                    }).join(' ');
+                tr.innerHTML = `
+                    <td class="py-3.5 px-3 text-center text-slate-500 font-mono text-xs">${index + 1}</td>
+                    <td class="py-3.5 px-3 font-medium text-slate-200 text-xs">${record.class || '-'}</td>
+                    <td class="py-3.5 px-3 text-slate-300 font-mono text-xs">${record.studentId || '-'}</td>
+                    <td class="py-3.5 px-3 font-semibold text-sky-300 text-xs">${record.name || '-'}</td>
+                    <td class="py-3.5 px-1 sm:px-3 text-xs whitespace-nowrap"><div class="flex flex-nowrap gap-1 sm:gap-1.5">${statusBadges || '-'}</div></td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function queryAttendanceRecords() {
+            if (!db) {
+                showToast('Firebase 尚未初始化，無法查詢點名紀錄');
+                return;
+            }
+
+            const selectedDate = document.getElementById('attendance-records-date')?.value || new Date().toISOString().slice(0, 10);
+            if (!selectedAttendanceRecordStatuses.length) {
+                showToast('請至少選擇一種點名狀態');
+                return;
+            }
+
+            db.collection('attendanceRecords').doc(selectedDate).collection('records').get()
+                .then(snapshot => {
+                    const recordsByMember = new Map();
+                    snapshot.forEach(doc => {
+                        const data = doc.data();
+                        if (!data) return;
+                        const key = `${data.class || ''}_${data.studentId || ''}`;
+                        const record = recordsByMember.get(key) || {
+                            class: data.class || '',
+                            studentId: data.studentId || '',
+                            name: data.name || '',
+                            arrivalStatus: '',
+                            departureStatus: ''
+                        };
+                        if (['簽到', '晚到'].includes(data.status)) record.arrivalStatus = data.status;
+                        if (['早退', '簽退'].includes(data.status)) record.departureStatus = data.status;
+                        recordsByMember.set(key, record);
+                    });
+
+                    const results = Array.from(recordsByMember.values()).filter(record =>
+                        selectedAttendanceRecordStatuses.includes(record.arrivalStatus) ||
+                        selectedAttendanceRecordStatuses.includes(record.departureStatus)
+                    );
+
+                    results.sort((a, b) => {
+                        const numA = parseInt(a.studentId, 10) || 0;
+                        const numB = parseInt(b.studentId, 10) || 0;
+                        return numA - numB;
+                    });
+
+                    renderAttendanceRecordsTable(results);
+                    if (!results.length) {
+                        showToast(`日期 ${selectedDate} 沒有符合條件的紀錄`);
+                    } else {
+                        showToast(`已查詢到 ${results.length} 位成員`);
+                    }
+                })
+                .catch(err => {
+                    console.error('查詢點名紀錄失敗:', err);
+                    showToast('查詢失敗：' + err.message);
+                });
+        }
+
+        // 頁面初始化載入
+        window.onload = function() {
+            setTodayAttendanceDate();
+            if (db) {
+                initRealtimeSync();
+            } else {
+                alert("無法連線至 Firebase Services，請確認網路連線。");
+            }
+        };
+
+        // 更新 Header 連線指示燈
+        function updateStatusBadge(isSuccess, text) {
+            const badge = document.getElementById('cloud-status-badge');
+            const noticeText = document.getElementById('db-notice-text');
+            if (isSuccess) {
+                badge.className = "px-2 py-0.5 rounded-full text-[10px] font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20";
+                badge.innerHTML = `<i class="fa-solid fa-cloud mr-1"></i>${text || '雲端已同步'}`;
+                if (noticeText) noticeText.textContent = "已成功連線至 Firebase Firestore 雲端資料庫，資料已即時同步。";
+            } else {
+                badge.className = "px-2 py-0.5 rounded-full text-[10px] font-medium bg-red-500/10 text-red-400 border border-red-500/20";
+                badge.innerHTML = `<i class="fa-solid fa-circle-exclamation mr-1"></i>${text || '連線失敗'}`;
+                if (noticeText) noticeText.textContent = "資料庫連線中斷或受安全規則阻擋，請確認 Firestore 權限。";
+            }
+        }
+
+        // 3. 雲端 Firestore 即時監聽與同步
+        function initRealtimeSync() {
+            db.collection('members').onSnapshot(snapshot => {
+                members = [];
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    members.push({
+                        docId: doc.id,
+                        class: data.class || '',
+                        studentId: data.studentId || '',
+                        name: data.name || ''
+                    });
+                });
+
+                // 如果雲端為空，寫入預設初始化資料
+                if (members.length === 0 && snapshot.metadata.fromCache === false) {
+                    seedInitialData();
+                    return;
+                }
+
+                // 依學號升冪自動排序
+                sortMembersByStudentId();
+                renderTable();
+                updateStatusBadge(true, "雲端已同步");
+            }, error => {
+                console.error("Firestore 即時監聽錯誤:", error);
+                updateStatusBadge(false, "權限/連線錯誤");
+                renderErrorRow(error.message);
+            });
+        }
+
+        // 預設資料種子
+        function buildMemberDocId(className, studentId) {
+            return `${String(className || '').trim()}_${String(studentId || '').trim()}`
+                .replace(/\s+/g, '')
+                .replace(/[\/:*?"<>|]/g, '');
+        }
+
+        function seedInitialData() {
+            const defaultList = [
+                { class: '高一1', studentId: '112002', name: '張小明' },
+                { class: '高一1', studentId: '112001', name: '李帥哥' },
+                { class: '高二3', studentId: '111048', name: '林阿宏' }
+            ];
+            const batch = db.batch();
+            defaultList.forEach(item => {
+                const docId = buildMemberDocId(item.class, item.studentId);
+                const docRef = db.collection('members').doc(docId);
+                batch.set(docRef, item);
+            });
+            batch.commit().then(() => {
+                showToast("已預載初始測試資料至雲端！");
+            }).catch(err => console.error("種子寫入失敗:", err));
+        }
+
+        // 依學號嚴格排序
+        function sortMembersByStudentId() {
+            members.sort((a, b) => {
+                const numA = parseInt(a.studentId, 10) || 0;
+                const numB = parseInt(b.studentId, 10) || 0;
+                if (numA !== numB) return numA - numB;
+                return a.studentId.localeCompare(b.studentId);
+            });
+        }
+
+        // 渲染表格
+        function renderTable() {
+            const tbody = document.getElementById('member-table-body');
+            const countSpan = document.getElementById('member-count');
+            tbody.innerHTML = '';
+
+            countSpan.textContent = `共 ${members.length} 人`;
+
+            if (members.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="4" class="py-8 text-center text-xs text-slate-400">
+                            目前無任何成員資料，請點選右上角「新增」。
+                        </td>
+                    </tr>`;
+                return;
+            }
+
+            members.forEach((m, index) => {
+                const tr = document.createElement('tr');
+                const isSelected = selectedMemberDocId === m.docId;
+                
+                tr.className = `cursor-pointer transition-colors hover:bg-slate-800/50 ${isSelected ? 'selected-row' : ''}`;
+                tr.onclick = () => toggleSelectRow(m.docId);
+
+                tr.innerHTML = `
+                    <td class="py-3.5 px-3 text-center text-slate-500 font-mono text-xs">${index + 1}</td>
+                    <td class="py-3.5 px-3 font-medium text-slate-200 text-xs">${m.class}</td>
+                    <td class="py-3.5 px-3 text-slate-300 font-mono text-xs">${m.studentId}</td>
+                    <td class="py-3.5 px-3 font-semibold text-sky-300 text-xs">${m.name}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function renderAttendanceTable() {
+            const tbody = document.getElementById('attendance-table-body');
+            const countSpan = document.getElementById('attendance-count');
+            tbody.innerHTML = '';
+
+            countSpan.textContent = `共 ${members.length} 人`;
+
+            if (members.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="4" class="py-8 text-center text-xs text-slate-400">
+                            目前無任何成員資料。
+                        </td>
+                    </tr>`;
+                return;
+            }
+
+            members.forEach((m, index) => {
+                const tr = document.createElement('tr');
+                const isSelected = selectedAttendanceDocIds.includes(m.docId);
+
+                tr.className = `cursor-pointer transition-colors hover:bg-slate-800/50 ${isSelected ? 'selected-row' : ''}`;
+                tr.onclick = () => toggleAttendanceRow(m.docId);
+
+                tr.innerHTML = `
+                    <td class="py-3.5 px-3 text-center text-slate-500 font-mono text-xs">${index + 1}</td>
+                    <td class="py-3.5 px-3 font-medium text-slate-200 text-xs">${m.class}</td>
+                    <td class="py-3.5 px-3 text-slate-300 font-mono text-xs">${m.studentId}</td>
+                    <td class="py-3.5 px-3 font-semibold text-sky-300 text-xs">${m.name}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function getDailyTotalMemberKey(data) {
+            return `${String(data.studentId || '').trim()}_${String(data.class || '').trim()}`
+                .replace(/\s+/g, '');
+        }
+
+        function setDefaultHoursStatisticsDates() {
+            const startDateInput = document.getElementById('hours-statistics-start-date');
+            const endDateInput = document.getElementById('hours-statistics-end-date');
+            if (!startDateInput.value) {
+                startDateInput.value = '2026-08-31';
+            }
+            if (!endDateInput.value) {
+                const today = new Date();
+                const yyyy = today.getFullYear();
+                const mm = String(today.getMonth() + 1).padStart(2, '0');
+                const dd = String(today.getDate()).padStart(2, '0');
+                endDateInput.value = `${yyyy}-${mm}-${dd}`;
+            }
+        }
+
+        async function queryHoursStatistics() {
+            const tbody = document.getElementById('hours-statistics-table-body');
+            const startDate = document.getElementById('hours-statistics-start-date').value;
+            const endDate = document.getElementById('hours-statistics-end-date').value;
+
+            if (!startDate || !endDate) {
+                showToast('請選擇開始與結束日期');
+                return;
+            }
+            if (startDate > endDate) {
+                showToast('開始日期不可晚於結束日期');
+                return;
+            }
+
+            if (!db) {
+                tbody.innerHTML = '<tr><td colspan="5" class="py-8 text-center text-xs text-red-400">Firebase 尚未初始化，無法讀取時數。</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = '<tr><td colspan="5" class="py-8 text-center text-xs text-slate-400">正在載入服務時數...</td></tr>';
+
+            try {
+                const dateSnapshot = await db.collection('attendanceRecords')
+                    .where('date', '>=', startDate)
+                    .where('date', '<=', endDate)
+                    .get();
+                const hoursByMember = new Map();
+                const dailyTotalSnapshots = await Promise.all(
+                    dateSnapshot.docs.map(dateDoc => dateDoc.ref.collection('dailyTotals').get())
+                );
+                dailyTotalSnapshots.forEach(snapshot => {
+                    snapshot.forEach(doc => {
+                        const data = doc.data();
+                        const key = getDailyTotalMemberKey(data);
+                        const hours = Number(data.serviceHours);
+                        if (!key || !Number.isInteger(hours) || hours < 0) return;
+                        hoursByMember.set(key, (hoursByMember.get(key) || 0) + hours);
+                    });
+                });
+
+                tbody.innerHTML = '';
+
+                if (!members.length) {
+                    tbody.innerHTML = '<tr><td colspan="5" class="py-8 text-center text-xs text-slate-400">目前沒有成員資料。</td></tr>';
+                    return;
+                }
+
+                members.forEach((member, index) => {
+                    const key = getDailyTotalMemberKey(member);
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td class="py-3.5 px-3 text-center text-slate-500 font-mono text-xs">${index + 1}</td>
+                        <td class="py-3.5 px-3 font-medium text-slate-200 text-xs"></td>
+                        <td class="py-3.5 px-3 text-slate-300 font-mono text-xs"></td>
+                        <td class="py-3.5 px-3 font-semibold text-sky-300 text-xs"></td>
+                        <td class="py-3.5 px-3 text-lime-300 font-bold text-xs whitespace-nowrap">${hoursByMember.get(key) || 0} 小時</td>
+                    `;
+                    row.cells[1].textContent = member.class;
+                    row.cells[2].textContent = member.studentId;
+                    row.cells[3].textContent = member.name;
+                    tbody.appendChild(row);
+                });
+            } catch (error) {
+                console.error('時數統計讀取失敗:', error);
+                const row = document.createElement('tr');
+                const cell = document.createElement('td');
+                cell.colSpan = 5;
+                cell.className = 'py-8 px-4 text-center text-xs text-red-400';
+                cell.textContent = `Firestore 讀取失敗（${error.code || 'unknown'}）：${error.message || '未知錯誤'}`;
+                row.appendChild(cell);
+                tbody.replaceChildren(row);
+            }
+        }
+
+        function renderErrorRow(errMsg) {
+            const tbody = document.getElementById('member-table-body');
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="4" class="py-6 px-4 text-center text-xs text-red-400 bg-red-500/5">
+                        <i class="fa-solid fa-triangle-exclamation mb-1 text-base"></i>
+                        <div>雲端讀取失敗：${errMsg}</div>
+                        <div class="text-[10px] text-slate-400 mt-1">請確認 Firebase Firestore 安全性規則是否設為 allow read, write: if true;</div>
+                    </td>
+                </tr>`;
+        }
+
+        // 點擊選擇列
+        function toggleSelectRow(docId) {
+            selectedMemberDocId = (selectedMemberDocId === docId) ? null : docId;
+            renderTable();
+        }
+
+        function toggleAttendanceRow(docId) {
+            if (selectedAttendanceDocIds.includes(docId)) {
+                selectedAttendanceDocIds = selectedAttendanceDocIds.filter(id => id !== docId);
+            } else {
+                selectedAttendanceDocIds.push(docId);
+            }
+            renderAttendanceTable();
+        }
+
+        function confirmAttendance() {
+            if (!selectedAttendanceDocIds.length) {
+                showToast('請至少選擇一位成員');
+                return;
+            }
+
+            const totalCount = selectedAttendanceDocIds.length;
+            const modal = document.getElementById('attendance-status-modal');
+            document.getElementById('attendance-total-count').textContent = totalCount;
+            modal.classList.remove('opacity-0', 'pointer-events-none');
+            modal.classList.add('pointer-events-auto');
+        }
+
+        function openAttendanceConfirmModal(status) {
+            const confirmStatus = document.getElementById('attendance-confirm-status');
+            const confirmTitle = document.getElementById('attendance-confirm-title');
+            const confirmTotal = document.getElementById('attendance-confirm-total');
+            const modal = document.getElementById('attendance-confirm-modal');
+
+            confirmStatus.textContent = status;
+            confirmTitle.textContent = `確認(${status})嗎？`;
+            confirmTotal.textContent = selectedAttendanceDocIds.length;
+            closeAttendanceStatusModal();
+            modal.classList.remove('opacity-0', 'pointer-events-none');
+            modal.classList.add('pointer-events-auto');
+        }
+
+        function closeAttendanceStatusModal() {
+            const modal = document.getElementById('attendance-status-modal');
+            modal.classList.add('opacity-0', 'pointer-events-none');
+            modal.classList.remove('pointer-events-auto');
+        }
+
+        function closeAttendanceConfirmModal() {
+            const modal = document.getElementById('attendance-confirm-modal');
+            modal.classList.add('opacity-0', 'pointer-events-none');
+            modal.classList.remove('pointer-events-auto');
+        }
+
+        function calculateDailyServiceHours(arrivalStatus, departureStatus) {
+            if (!arrivalStatus || !departureStatus) return 0;
+            return arrivalStatus === '簽到' && departureStatus === '簽退' ? 2 : 1;
+        }
+
+        function submitAttendanceStatus() {
+            if (!db) {
+                showToast('Firebase 尚未初始化，無法儲存點名紀錄');
+                return;
+            }
+
+            const statusText = document.getElementById('attendance-confirm-status').textContent.trim();
+            const selectedDate = document.getElementById('attendance-date').value || new Date().toISOString().slice(0, 10);
+            const selectedCount = selectedAttendanceDocIds.length;
+
+            if (!selectedCount) {
+                showToast('請至少選擇一位成員');
+                return;
+            }
+
+            const category = ['簽到', '晚到'].includes(statusText) ? 'arrival' : 'departure';
+            const otherCategory = category === 'arrival' ? 'departure' : 'arrival';
+            const attendanceDateRef = db.collection('attendanceRecords').doc(selectedDate);
+            const recordsRef = attendanceDateRef.collection('records');
+            const dateWrite = attendanceDateRef.set({
+                date: selectedDate,
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            }, { merge: true });
+
+            const recordWrites = [];
+            selectedAttendanceDocIds.forEach(docId => {
+                const member = members.find(m => m.docId === docId);
+                if (!member) return;
+
+                const memberKey = `${member.studentId}_${member.class}`.replace(/\s+/g, '');
+                const recordRef = recordsRef.doc(`${memberKey}_${category}`);
+                const otherRecordRef = recordsRef.doc(`${memberKey}_${otherCategory}`);
+                const dailyTotalRef = attendanceDateRef.collection('dailyTotals').doc(memberKey);
+
+                recordWrites.push(db.runTransaction(async transaction => {
+                    const otherRecordSnapshot = await transaction.get(otherRecordRef);
+                    const otherStatus = otherRecordSnapshot.exists ? otherRecordSnapshot.data().status : '';
+                    const arrivalStatus = category === 'arrival' ? statusText : otherStatus;
+                    const departureStatus = category === 'departure' ? statusText : otherStatus;
+                    const serviceHours = calculateDailyServiceHours(arrivalStatus, departureStatus);
+                    const updatedAt = firebase.firestore.FieldValue.serverTimestamp();
+
+                    transaction.set(recordRef, {
+                        class: member.class,
+                        studentId: member.studentId,
+                        name: member.name,
+                        status: statusText,
+                        category: category,
+                        date: selectedDate,
+                        updatedAt: updatedAt
+                    }, { merge: true });
+
+                    transaction.set(dailyTotalRef, {
+                        class: member.class,
+                        studentId: member.studentId,
+                        name: member.name,
+                        arrivalStatus: arrivalStatus,
+                        departureStatus: departureStatus,
+                        serviceHours: serviceHours,
+                        date: selectedDate,
+                        updatedAt: updatedAt
+                    }, { merge: true });
+                }));
+            });
+
+            Promise.all([dateWrite, ...recordWrites])
+                .then(() => {
+                    closeAttendanceConfirmModal();
+                    selectedAttendanceDocIds = [];
+                    renderAttendanceTable();
+                    showToast(`已確認 ${selectedCount} 位成員為 ${statusText}`);
+                })
+                .catch(err => {
+                    console.error('點名儲存失敗:', err);
+                    showToast('儲存失敗：' + err.message);
+                });
+        }
+
+        // 視圖切換
+        function switchView(viewName) {
+            const homeView = document.getElementById('view-home');
+            const membersView = document.getElementById('view-members');
+            const attendanceView = document.getElementById('view-attendance');
+            const attendanceRecordsView = document.getElementById('view-attendance-records');
+            const hoursStatisticsView = document.getElementById('view-hours-statistics');
+            const memberBtns = document.getElementById('member-action-btns');
+            const headerTitle = document.getElementById('header-title');
+
+            homeView.classList.add('hidden');
+            membersView.classList.add('hidden');
+            attendanceView.classList.add('hidden');
+            attendanceRecordsView.classList.add('hidden');
+            hoursStatisticsView.classList.add('hidden');
+
+            if (viewName === 'members') {
+                membersView.classList.remove('hidden');
+                memberBtns.classList.remove('hidden');
+                headerTitle.textContent = '成員管理';
+            } else if (viewName === 'attendance') {
+                attendanceView.classList.remove('hidden');
+                memberBtns.classList.add('hidden');
+                headerTitle.textContent = '點名系統';
+                setTodayAttendanceDate();
+                renderAttendanceTable();
+            } else if (viewName === 'attendance-records') {
+                attendanceRecordsView.classList.remove('hidden');
+                memberBtns.classList.add('hidden');
+                headerTitle.textContent = '點名紀錄';
+                setTodayAttendanceRecordsDate();
+                syncAttendanceRecordStatusButtons();
+                renderAttendanceRecordsTable([]);
+            } else if (viewName === 'hours-statistics') {
+                hoursStatisticsView.classList.remove('hidden');
+                memberBtns.classList.add('hidden');
+                headerTitle.textContent = '時數統計';
+                setDefaultHoursStatisticsDates();
+            } else {
+                homeView.classList.remove('hidden');
+                memberBtns.classList.add('hidden');
+                headerTitle.textContent = '主頁面';
+                selectedMemberDocId = null;
+                selectedAttendanceDocIds = [];
+                renderTable();
+            }
+            closeDrawer();
+        }
+
+        // 開啟 Modal
+        function openModal(mode) {
+            currentModalMode = mode;
+            const modal = document.getElementById('form-modal');
+            const modalBox = document.getElementById('modal-box');
+            const modalTitle = document.getElementById('modal-title');
+            const submitBtn = document.getElementById('submit-btn');
+
+            const inputClass = document.getElementById('input-class');
+            const inputStudentId = document.getElementById('input-student-id');
+            const inputName = document.getElementById('input-name');
+
+            if (mode === 'edit') {
+                if (!selectedMemberDocId) {
+                    showToast('請先點擊選取欲修改的成員');
+                    return;
+                }
+                const target = members.find(m => m.docId === selectedMemberDocId);
+                if (!target) return;
+
+                modalTitle.textContent = '修改成員資料';
+                submitBtn.querySelector('span').textContent = '修改並儲存';
+
+                inputClass.value = target.class;
+                inputStudentId.value = target.studentId;
+                inputName.value = target.name;
+            } else {
+                modalTitle.textContent = '新增成員';
+                submitBtn.querySelector('span').textContent = '新增至雲端';
+                document.getElementById('member-form').reset();
+            }
+
+            modal.classList.remove('opacity-0', 'pointer-events-none');
+            modalBox.classList.remove('scale-95');
+            modalBox.classList.add('scale-100');
+        }
+
+        // 關閉 Modal
+        function closeModal() {
+            const modal = document.getElementById('form-modal');
+            const modalBox = document.getElementById('modal-box');
+            modalBox.classList.remove('scale-100');
+            modalBox.classList.add('scale-95');
+            modal.classList.add('opacity-0', 'pointer-events-none');
+        }
+
+        // 表單提交：新增 / 修改寫入 Firestore
+        function handleFormSubmit(e) {
+            e.preventDefault();
+
+            const inputClass = document.getElementById('input-class').value.trim();
+            const inputStudentId = document.getElementById('input-student-id').value.trim();
+            const inputName = document.getElementById('input-name').value.trim();
+
+            if (!inputClass || !inputStudentId || !inputName) return;
+
+            const memberData = {
+                class: inputClass,
+                studentId: inputStudentId,
+                name: inputName,
+                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+            };
+
+            if (currentModalMode === 'add') {
+                const memberDocId = buildMemberDocId(inputClass, inputStudentId);
+                db.collection('members').doc(memberDocId).set(memberData, { merge: true })
+                    .then(() => {
+                        showToast('成功新增至雲端！');
+                        closeModal();
+                    })
+                    .catch(err => {
+                        console.error("新增失敗:", err);
+                        alert("寫入雲端失敗！請確認 Firestore 規則已經發布: " + err.message);
+                    });
+            } else if (currentModalMode === 'edit') {
+                if (!selectedMemberDocId) return;
+                db.collection('members').doc(selectedMemberDocId).update(memberData)
+                    .then(() => {
+                        showToast('雲端資料更新成功！');
+                        closeModal();
+                    })
+                    .catch(err => {
+                        console.error("修改失敗:", err);
+                        alert("更新雲端失敗: " + err.message);
+                    });
+            }
+        }
+
+        function triggerDeleteMember() {
+    if (!selectedMemberDocId) return;
+    const target = members.find(m => m.docId === selectedMemberDocId);
+    if (!target) return;
+
+    const modal = document.getElementById('delete-confirm-modal');
+    const text = document.getElementById('delete-confirm-text');
+    // 這裡會把選到的成員名字與學號塞進對話框的文字中
+    text.innerHTML = `確定要刪除成員【<strong class="text-sky-300">${target.class} ${target.name}</strong>（學號：${target.studentId}）】嗎？<br><span class="text-red-400">此操作將無法復原！</span>`;
+
+    modal.classList.remove('opacity-0', 'pointer-events-none');
+	}
+
+	function closeDeleteModal() {
+    	const modal = document.getElementById('delete-confirm-modal');
+    	modal.classList.add('opacity-0', 'pointer-events-none');
+	}
+
+	function executeDeleteMember() {
+    if (!selectedMemberDocId) return;
+
+    db.collection('members').doc(selectedMemberDocId).delete()
+        .then(() => {
+            showToast('已成功刪除成員！');
+            selectedMemberDocId = null;
+            closeDeleteModal();
+            renderTable();
+        })
+        .catch(err => {
+            console.error("刪除失敗:", err);
+            showToast("刪除失敗: " + err.message);
+        });
+}
+
+        // 提示訊息 Toast
+        function showToast(msg) {
+            const toast = document.createElement('div');
+            toast.className = 'fixed bottom-6 left-1/2 -translate-x-1/2 bg-sky-400 text-slate-950 font-bold px-4 py-2 rounded-xl shadow-2xl z-50 text-xs transition-all duration-300';
+            toast.textContent = msg;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 2500);
+        }
+
+        // Drawer 選單控制
+        const openMenuBtn = document.getElementById('open-menu-btn');
+        const closeMenuBtn = document.getElementById('close-menu-btn');
+        const drawerContainer = document.getElementById('drawer-container');
+        const drawerBackdrop = document.getElementById('drawer-backdrop');
+        const drawerPanel = document.getElementById('drawer-panel');
+
+        function openDrawer() {
+            drawerContainer.classList.remove('pointer-events-none');
+            drawerBackdrop.classList.remove('opacity-0', 'pointer-events-none');
+            drawerBackdrop.classList.add('opacity-100', 'pointer-events-auto');
+            drawerPanel.classList.remove('-translate-x-full');
+            drawerPanel.classList.add('translate-x-0');
+        }
+
+        function closeDrawer() {
+            drawerBackdrop.classList.remove('opacity-100', 'pointer-events-auto');
+            drawerBackdrop.classList.add('opacity-0', 'pointer-events-none');
+            drawerPanel.classList.remove('translate-x-0');
+            drawerPanel.classList.add('-translate-x-full');
+            setTimeout(() => {
+                drawerContainer.classList.add('pointer-events-none');
+            }, 300);
+        }
+
+        function selectMenuToast(name) {
+            closeDrawer();
+            setTimeout(() => showToast(`已選擇：${name}（模組開發中）`), 300);
+        }
+
+        openMenuBtn.addEventListener('click', openDrawer);
+        closeMenuBtn.addEventListener('click', closeDrawer);
+        drawerBackdrop.addEventListener('click', closeDrawer);
+    </script>
+</body>
+</html>
