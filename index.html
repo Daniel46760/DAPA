@@ -119,6 +119,15 @@
                             <span>新增</span>
                         </button>
                     </div>
+                    <div id="attendance-record-management-action-btns" class="hidden flex items-center gap-1.5">
+                        <button onclick="triggerDeleteAttendanceRecord()" class="w-8 h-8 flex items-center justify-center rounded-lg bg-red-500/20 text-red-400 hover:bg-red-500/30 border border-red-500/30 active:scale-95 transition" title="刪除選取紀錄">
+                            <i class="fa-solid fa-trash-can text-xs"></i>
+                        </button>
+                        <button onclick="openAttendanceRecordEditModal()" class="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-xs font-semibold active:scale-95 transition">
+                            <i class="fa-solid fa-pen text-violet-300"></i>
+                            <span>編輯</span>
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -130,9 +139,9 @@
         <aside id="drawer-panel" class="drawer-content absolute top-0 left-0 bottom-0 w-72 bg-slate-900 border-r border-slate-800 flex flex-col -translate-x-full pointer-events-auto shadow-2xl">
             <div class="p-5 border-b border-slate-800 flex items-center justify-between">
                 <div class="flex items-center gap-3">
-                    <div class="w-9 h-9 rounded-lg bg-sky-500/10 border border-sky-500/30 flex items-center justify-center text-sky-400">
+                    <button type="button" aria-label="系統設定" onclick="handleHiddenManagementAccess()" class="w-9 h-9 rounded-lg bg-sky-500/10 border border-sky-500/30 flex items-center justify-center text-sky-400 cursor-default focus:outline-none active:transform-none">
                         <i class="fa-solid fa-sliders"></i>
-                    </div>
+                    </button>
                     <div>
                         <h3 class="font-bold text-slate-100 text-sm">DAPA 系統選單</h3>
                         <p class="text-xs text-slate-400">大安音控管理端</p>
@@ -375,6 +384,58 @@
             </div>
         </section>
 
+        <!-- 隱藏視圖：點名紀錄管理 -->
+        <section id="view-attendance-records-management" class="hidden space-y-4 pb-20">
+            <div class="glass-card rounded-2xl border border-slate-800 shadow-xl p-3 space-y-3">
+                <div class="flex items-center justify-between gap-3">
+                    <div class="flex-1">
+                        <label class="block text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400 mb-2">日期</label>
+                        <input id="attendance-records-management-date" type="date" class="h-[42px] w-full rounded-xl border border-slate-700 bg-slate-900/80 text-slate-100 text-sm px-3 py-2.5 focus:outline-none focus:border-violet-400">
+                    </div>
+                    <button onclick="queryAttendanceRecords(true)" class="self-end flex h-[42px] items-center justify-center px-4 rounded-xl bg-violet-500 hover:bg-violet-400 text-slate-950 font-bold text-xs shadow-lg shadow-violet-500/20 active:scale-95 transition">
+                        查詢
+                    </button>
+                </div>
+
+                <div>
+                    <div class="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400 mb-2">狀態</div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <button type="button" data-status="簽到" onclick="toggleAttendanceRecordStatus('簽到', true)" class="attendance-records-management-status-filter-btn rounded-xl border px-3 py-2 text-xs font-semibold transition active:scale-95 border-slate-700 bg-slate-800 text-slate-200">簽到</button>
+                        <button type="button" data-status="晚到" onclick="toggleAttendanceRecordStatus('晚到', true)" class="attendance-records-management-status-filter-btn rounded-xl border px-3 py-2 text-xs font-semibold transition active:scale-95 border-slate-700 bg-slate-800 text-slate-200">晚到</button>
+                        <button type="button" data-status="早退" onclick="toggleAttendanceRecordStatus('早退', true)" class="attendance-records-management-status-filter-btn rounded-xl border px-3 py-2 text-xs font-semibold transition active:scale-95 border-slate-700 bg-slate-800 text-slate-200">早退</button>
+                        <button type="button" data-status="簽退" onclick="toggleAttendanceRecordStatus('簽退', true)" class="attendance-records-management-status-filter-btn rounded-xl border px-3 py-2 text-xs font-semibold transition active:scale-95 border-slate-700 bg-slate-800 text-slate-200">簽退</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex items-center justify-between text-xs text-slate-400 px-1">
+                <span>點擊紀錄列即可選取，再使用右上方刪除或編輯</span>
+            </div>
+
+            <div class="glass-card rounded-2xl overflow-hidden border border-slate-800 shadow-xl">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm">
+                        <thead class="bg-slate-800/80 text-xs font-semibold text-slate-300 uppercase border-b border-slate-700/60">
+                            <tr>
+                                <th class="py-3 px-3 w-10 text-center">#</th>
+                                <th class="py-3 px-3">班級</th>
+                                <th class="py-3 px-3">學號</th>
+                                <th class="py-3 px-3">姓名</th>
+                                <th class="py-3 px-3">到校 / 離校</th>
+                            </tr>
+                        </thead>
+                        <tbody id="attendance-records-management-table-body" class="divide-y divide-slate-800/60">
+                            <tr>
+                                <td colspan="5" class="py-8 text-center text-xs text-slate-400">
+                                    尚未查詢，請選擇日期與狀態後點選「查詢」。
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
     </main>
 
     <div id="attendance-status-modal" class="fixed inset-0 z-50 flex items-center justify-center px-4 bg-slate-950/70 backdrop-blur-sm opacity-0 pointer-events-none transition-opacity duration-200">
@@ -458,6 +519,41 @@
         </div>
     </div>
 
+    <div id="attendance-record-edit-modal" class="fixed inset-0 z-[55] flex items-center justify-center px-4 bg-slate-950/80 backdrop-blur-sm opacity-0 pointer-events-none transition-opacity duration-200">
+        <div class="glass-card w-full max-w-sm rounded-2xl border border-violet-500/40 p-6 shadow-2xl relative bg-slate-900/95 space-y-4">
+            <div class="flex items-start justify-between gap-3">
+                <div>
+                    <h3 class="text-base font-bold text-white">編輯點名紀錄</h3>
+                    <p id="attendance-record-edit-member" class="mt-1 text-xs text-slate-400"></p>
+                </div>
+                <button onclick="closeAttendanceRecordEditModal()" class="w-8 h-8 flex shrink-0 items-center justify-center text-slate-400 hover:text-white rounded-lg">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <div>
+                <div class="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400 mb-2">到校狀態</div>
+                <div class="grid grid-cols-2 gap-2">
+                    <button id="attendance-record-edit-arrival-present" type="button" onclick="selectAttendanceRecordEditStatus('arrival', '簽到')" class="attendance-record-edit-status-btn rounded-xl border border-slate-700 bg-slate-800 px-3 py-2.5 text-xs font-semibold text-slate-200 transition">簽到</button>
+                    <button id="attendance-record-edit-arrival-late" type="button" onclick="selectAttendanceRecordEditStatus('arrival', '晚到')" class="attendance-record-edit-status-btn rounded-xl border border-slate-700 bg-slate-800 px-3 py-2.5 text-xs font-semibold text-slate-200 transition">晚到</button>
+                </div>
+            </div>
+
+            <div>
+                <div class="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400 mb-2">離校狀態</div>
+                <div class="grid grid-cols-2 gap-2">
+                    <button id="attendance-record-edit-departure-early" type="button" onclick="selectAttendanceRecordEditStatus('departure', '早退')" class="attendance-record-edit-status-btn rounded-xl border border-slate-700 bg-slate-800 px-3 py-2.5 text-xs font-semibold text-slate-200 transition">早退</button>
+                    <button id="attendance-record-edit-departure-signout" type="button" onclick="selectAttendanceRecordEditStatus('departure', '簽退')" class="attendance-record-edit-status-btn rounded-xl border border-slate-700 bg-slate-800 px-3 py-2.5 text-xs font-semibold text-slate-200 transition">簽退</button>
+                </div>
+            </div>
+
+            <div class="flex justify-end gap-2 pt-2">
+                <button onclick="closeAttendanceRecordEditModal()" class="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 text-xs font-semibold hover:bg-slate-700 transition">取消</button>
+                <button onclick="saveAttendanceRecordEdit()" class="px-4 py-2 rounded-xl bg-violet-500 hover:bg-violet-400 text-slate-950 text-xs font-bold transition shadow-lg shadow-violet-500/20">確認</button>
+            </div>
+        </div>
+    </div>
+
     <!-- 刪除確認 Modal -->
 
     <div id="delete-confirm-modal" class="fixed inset-0 z-50 flex items-center justify-center px-4 bg-slate-950/80 backdrop-blur-sm opacity-0 pointer-events-none transition-opacity duration-200">
@@ -470,7 +566,7 @@
 
             </div>
 
-            <h3 class="text-base font-bold text-white">確認刪除成員？</h3>
+            <h3 id="delete-confirm-title" class="text-base font-bold text-white">確認刪除成員？</h3>
 
             <p id="delete-confirm-text" class="text-xs text-slate-300 leading-relaxed">
 
@@ -486,7 +582,7 @@
 
                 </button>
 
-                <button id="confirm-delete-btn" onclick="executeDeleteMember()" class="px-4 py-2 rounded-xl bg-red-500 hover:bg-red-400 text-white text-xs font-bold transition shadow-lg shadow-red-500/20">
+                <button id="confirm-delete-btn" onclick="executeCurrentDelete()" class="px-4 py-2 rounded-xl bg-red-500 hover:bg-red-400 text-white text-xs font-bold transition shadow-lg shadow-red-500/20">
 
                     確定刪除
 
@@ -518,7 +614,15 @@
         let selectedMemberDocId = null;
         let selectedAttendanceDocIds = [];
         let selectedAttendanceRecordStatuses = ['簽到', '晚到', '早退', '簽退'];
+        let selectedAttendanceRecordManagementStatuses = ['簽到', '晚到', '早退', '簽退'];
+        let attendanceRecordManagementRows = [];
+        let attendanceRecordManagementResultsDate = '';
+        let selectedAttendanceRecordManagementKey = null;
+        let attendanceRecordEditStatuses = { arrival: '', departure: '' };
+        let deleteTargetMode = 'member';
         let currentModalMode = 'add';
+        let hiddenManagementClickCount = 0;
+        let hiddenManagementClickTimer = null;
 
         try {
             firebase.initializeApp(firebaseConfig);
@@ -550,9 +654,19 @@
             attendanceRecordsDateInput.value = `${yyyy}-${mm}-${dd}`;
         }
 
+        function setTodayAttendanceRecordsManagementDate() {
+            const dateInput = document.getElementById('attendance-records-management-date');
+            if (!dateInput) return;
+
+            const today = new Date();
+            const yyyy = today.getFullYear();
+            const mm = String(today.getMonth() + 1).padStart(2, '0');
+            const dd = String(today.getDate()).padStart(2, '0');
+            dateInput.value = `${yyyy}-${mm}-${dd}`;
+        }
+
         function syncAttendanceRecordStatusButtons() {
-            const buttons = document.querySelectorAll('.attendance-status-filter-btn');
-            buttons.forEach(btn => {
+            document.querySelectorAll('.attendance-status-filter-btn').forEach(btn => {
                 const status = btn.dataset.status;
                 const isSelected = selectedAttendanceRecordStatuses.includes(status);
                 btn.classList.toggle('border-violet-400', isSelected);
@@ -562,19 +676,33 @@
                 btn.classList.toggle('bg-slate-800', !isSelected);
                 btn.classList.toggle('text-slate-200', !isSelected);
             });
+            document.querySelectorAll('.attendance-records-management-status-filter-btn').forEach(btn => {
+                const status = btn.dataset.status;
+                const isSelected = selectedAttendanceRecordManagementStatuses.includes(status);
+                btn.classList.toggle('border-violet-400', isSelected);
+                btn.classList.toggle('bg-violet-500/15', isSelected);
+                btn.classList.toggle('text-violet-300', isSelected);
+                btn.classList.toggle('border-slate-700', !isSelected);
+                btn.classList.toggle('bg-slate-800', !isSelected);
+                btn.classList.toggle('text-slate-200', !isSelected);
+            });
         }
 
-        function toggleAttendanceRecordStatus(status) {
-            if (selectedAttendanceRecordStatuses.includes(status)) {
-                selectedAttendanceRecordStatuses = selectedAttendanceRecordStatuses.filter(item => item !== status);
+        function toggleAttendanceRecordStatus(status, isManagement = false) {
+            const selectedStatuses = isManagement ? selectedAttendanceRecordManagementStatuses : selectedAttendanceRecordStatuses;
+            if (selectedStatuses.includes(status)) {
+                const updatedStatuses = selectedStatuses.filter(item => item !== status);
+                if (isManagement) selectedAttendanceRecordManagementStatuses = updatedStatuses;
+                else selectedAttendanceRecordStatuses = updatedStatuses;
             } else {
-                selectedAttendanceRecordStatuses.push(status);
+                selectedStatuses.push(status);
             }
             syncAttendanceRecordStatusButtons();
         }
 
-        function renderAttendanceRecordsTable(records) {
-            const tbody = document.getElementById('attendance-records-table-body');
+        function renderAttendanceRecordsTable(records, isManagement = false) {
+            const tbodyId = isManagement ? 'attendance-records-management-table-body' : 'attendance-records-table-body';
+            const tbody = document.getElementById(tbodyId);
             if (!tbody) return;
 
             tbody.innerHTML = '';
@@ -591,7 +719,15 @@
 
             records.forEach((record, index) => {
                 const tr = document.createElement('tr');
-                tr.className = 'hover:bg-slate-800/40';
+                const recordKey = `${record.class || ''}_${record.studentId || ''}`;
+                const isSelected = isManagement && selectedAttendanceRecordManagementKey === recordKey;
+                tr.className = `${isManagement ? 'cursor-pointer' : ''} hover:bg-slate-800/40 ${isSelected ? 'selected-row' : ''}`;
+                if (isManagement) {
+                    tr.onclick = () => {
+                        selectedAttendanceRecordManagementKey = recordKey;
+                        renderAttendanceRecordsTable(attendanceRecordManagementRows, true);
+                    };
+                }
                 const statusBadges = [record.arrivalStatus, record.departureStatus]
                     .filter(Boolean)
                     .map(status => {
@@ -611,16 +747,25 @@
             });
         }
 
-        function queryAttendanceRecords() {
+        function queryAttendanceRecords(isManagement = false) {
             if (!db) {
                 showToast('Firebase 尚未初始化，無法查詢點名紀錄');
                 return;
             }
 
-            const selectedDate = document.getElementById('attendance-records-date')?.value || new Date().toISOString().slice(0, 10);
-            if (!selectedAttendanceRecordStatuses.length) {
+            const dateInputId = isManagement ? 'attendance-records-management-date' : 'attendance-records-date';
+            const selectedDate = document.getElementById(dateInputId)?.value || new Date().toISOString().slice(0, 10);
+            const selectedStatuses = isManagement ? selectedAttendanceRecordManagementStatuses : selectedAttendanceRecordStatuses;
+            if (!selectedStatuses.length) {
                 showToast('請至少選擇一種點名狀態');
                 return;
+            }
+
+            if (isManagement) {
+                attendanceRecordManagementRows = [];
+                attendanceRecordManagementResultsDate = '';
+                selectedAttendanceRecordManagementKey = null;
+                renderAttendanceRecordsTable([], true);
             }
 
             db.collection('attendanceRecords').doc(selectedDate).collection('records').get()
@@ -643,8 +788,8 @@
                     });
 
                     const results = Array.from(recordsByMember.values()).filter(record =>
-                        selectedAttendanceRecordStatuses.includes(record.arrivalStatus) ||
-                        selectedAttendanceRecordStatuses.includes(record.departureStatus)
+                        selectedStatuses.includes(record.arrivalStatus) ||
+                        selectedStatuses.includes(record.departureStatus)
                     );
 
                     results.sort((a, b) => {
@@ -653,7 +798,12 @@
                         return numA - numB;
                     });
 
-                    renderAttendanceRecordsTable(results);
+                    if (isManagement) {
+                        attendanceRecordManagementRows = results;
+                        attendanceRecordManagementResultsDate = selectedDate;
+                        selectedAttendanceRecordManagementKey = null;
+                    }
+                    renderAttendanceRecordsTable(results, isManagement);
                     if (!results.length) {
                         showToast(`日期 ${selectedDate} 沒有符合條件的紀錄`);
                     } else {
@@ -663,6 +813,230 @@
                 .catch(err => {
                     console.error('查詢點名紀錄失敗:', err);
                     showToast('查詢失敗：' + err.message);
+                });
+        }
+
+        function openAttendanceRecordEditModal() {
+            if (!selectedAttendanceRecordManagementKey) {
+                showToast('請先選取一筆點名紀錄');
+                return;
+            }
+
+            const record = attendanceRecordManagementRows.find(item =>
+                `${item.class || ''}_${item.studentId || ''}` === selectedAttendanceRecordManagementKey
+            );
+            if (!record) {
+                showToast('找不到選取的點名紀錄，請重新查詢');
+                return;
+            }
+
+            attendanceRecordEditStatuses = {
+                arrival: record.arrivalStatus || '',
+                departure: record.departureStatus || ''
+            };
+            document.getElementById('attendance-record-edit-member').textContent =
+                `${record.class}　${record.studentId}　${record.name}`;
+            syncAttendanceRecordEditStatusButtons();
+            const modal = document.getElementById('attendance-record-edit-modal');
+            modal.classList.remove('opacity-0', 'pointer-events-none');
+            modal.classList.add('pointer-events-auto');
+        }
+
+        function selectAttendanceRecordEditStatus(category, status) {
+            attendanceRecordEditStatuses[category] = status;
+            syncAttendanceRecordEditStatusButtons();
+        }
+
+        function syncAttendanceRecordEditStatusButtons() {
+            const statusButtonMap = {
+                '簽到': 'attendance-record-edit-arrival-present',
+                '晚到': 'attendance-record-edit-arrival-late',
+                '早退': 'attendance-record-edit-departure-early',
+                '簽退': 'attendance-record-edit-departure-signout'
+            };
+            Object.entries(statusButtonMap).forEach(([status, buttonId]) => {
+                const button = document.getElementById(buttonId);
+                const category = ['簽到', '晚到'].includes(status) ? 'arrival' : 'departure';
+                const isSelected = attendanceRecordEditStatuses[category] === status;
+                button.classList.toggle('border-violet-400', isSelected);
+                button.classList.toggle('bg-violet-500/20', isSelected);
+                button.classList.toggle('text-violet-200', isSelected);
+                button.classList.toggle('border-slate-700', !isSelected);
+                button.classList.toggle('bg-slate-800', !isSelected);
+                button.classList.toggle('text-slate-200', !isSelected);
+            });
+        }
+
+        function closeAttendanceRecordEditModal() {
+            const modal = document.getElementById('attendance-record-edit-modal');
+            modal.classList.add('opacity-0', 'pointer-events-none');
+            modal.classList.remove('pointer-events-auto');
+        }
+
+        function saveAttendanceRecordEdit() {
+            if (!db) {
+                showToast('Firebase 尚未初始化，無法儲存點名紀錄');
+                return;
+            }
+            if (!selectedAttendanceRecordManagementKey) {
+                showToast('請重新選取點名紀錄');
+                return;
+            }
+
+            const record = attendanceRecordManagementRows.find(item =>
+                `${item.class || ''}_${item.studentId || ''}` === selectedAttendanceRecordManagementKey
+            );
+            if (!record) {
+                showToast('找不到選取的點名紀錄，請重新查詢');
+                return;
+            }
+            if (!attendanceRecordEditStatuses.arrival && !attendanceRecordEditStatuses.departure) {
+                showToast('至少需要保留一種點名狀態');
+                return;
+            }
+
+            const selectedDate = document.getElementById('attendance-records-management-date').value;
+            if (selectedDate !== attendanceRecordManagementResultsDate) {
+                showToast('日期已變更，請先重新查詢');
+                return;
+            }
+            const memberKey = getDailyTotalMemberKey(record);
+            const dateRef = db.collection('attendanceRecords').doc(selectedDate);
+            const recordsRef = dateRef.collection('records');
+            const arrivalRef = recordsRef.doc(`${memberKey}_arrival`);
+            const departureRef = recordsRef.doc(`${memberKey}_departure`);
+            const dailyTotalRef = dateRef.collection('dailyTotals').doc(memberKey);
+            const batch = db.batch();
+            const updatedAt = firebase.firestore.FieldValue.serverTimestamp();
+
+            batch.set(dateRef, {
+                date: selectedDate,
+                updatedAt: updatedAt
+            }, { merge: true });
+
+            [
+                { ref: arrivalRef, status: attendanceRecordEditStatuses.arrival, category: 'arrival' },
+                { ref: departureRef, status: attendanceRecordEditStatuses.departure, category: 'departure' }
+            ].forEach(item => {
+                if (!item.status) {
+                    batch.delete(item.ref);
+                    return;
+                }
+                batch.set(item.ref, {
+                    class: record.class,
+                    studentId: record.studentId,
+                    name: record.name,
+                    status: item.status,
+                    category: item.category,
+                    date: selectedDate,
+                    updatedAt: updatedAt
+                }, { merge: true });
+            });
+
+            batch.set(dailyTotalRef, {
+                class: record.class,
+                studentId: record.studentId,
+                name: record.name,
+                arrivalStatus: attendanceRecordEditStatuses.arrival,
+                departureStatus: attendanceRecordEditStatuses.departure,
+                serviceHours: calculateDailyServiceHours(
+                    attendanceRecordEditStatuses.arrival,
+                    attendanceRecordEditStatuses.departure
+                ),
+                date: selectedDate,
+                updatedAt: updatedAt
+            }, { merge: true });
+
+            batch.commit()
+                .then(() => {
+                    attendanceRecordManagementRows = attendanceRecordManagementRows.map(item =>
+                        `${item.class || ''}_${item.studentId || ''}` === selectedAttendanceRecordManagementKey
+                            ? {
+                                ...item,
+                                arrivalStatus: attendanceRecordEditStatuses.arrival,
+                                departureStatus: attendanceRecordEditStatuses.departure
+                            }
+                            : item
+                    );
+                    renderAttendanceRecordsTable(attendanceRecordManagementRows, true);
+                    closeAttendanceRecordEditModal();
+                    showToast('點名狀態與服務時數已更新');
+                })
+                .catch(error => {
+                    console.error('更新點名紀錄失敗:', error);
+                    showToast('更新失敗：' + error.message);
+                });
+        }
+
+        function triggerDeleteAttendanceRecord() {
+            if (document.getElementById('attendance-records-management-date').value !== attendanceRecordManagementResultsDate) {
+                showToast('日期已變更，請先重新查詢');
+                return;
+            }
+            if (!selectedAttendanceRecordManagementKey) {
+                showToast('請先選取一筆點名紀錄');
+                return;
+            }
+            const record = attendanceRecordManagementRows.find(item =>
+                `${item.class || ''}_${item.studentId || ''}` === selectedAttendanceRecordManagementKey
+            );
+            if (!record) {
+                showToast('找不到選取的點名紀錄，請重新查詢');
+                return;
+            }
+
+            deleteTargetMode = 'attendance-record';
+            document.getElementById('delete-confirm-title').textContent = '確認刪除點名紀錄？';
+            document.getElementById('delete-confirm-text').textContent =
+                `確定要刪除 ${record.class} ${record.name}（學號：${record.studentId}）在所選日期的點名狀態與服務時數嗎？此操作無法復原。`;
+            document.getElementById('confirm-delete-btn').textContent = '確定刪除';
+            document.getElementById('delete-confirm-modal').classList.remove('opacity-0', 'pointer-events-none');
+        }
+
+        function executeCurrentDelete() {
+            if (deleteTargetMode === 'attendance-record') {
+                executeDeleteAttendanceRecord();
+            } else {
+                executeDeleteMember();
+            }
+        }
+
+        function executeDeleteAttendanceRecord() {
+            if (!db) {
+                showToast('Firebase 尚未初始化，無法刪除點名紀錄');
+                return;
+            }
+            if (!selectedAttendanceRecordManagementKey) return;
+            if (document.getElementById('attendance-records-management-date').value !== attendanceRecordManagementResultsDate) {
+                showToast('日期已變更，請先重新查詢');
+                return;
+            }
+            const record = attendanceRecordManagementRows.find(item =>
+                `${item.class || ''}_${item.studentId || ''}` === selectedAttendanceRecordManagementKey
+            );
+            if (!record) return;
+
+            const selectedDate = document.getElementById('attendance-records-management-date').value;
+            const dateRef = db.collection('attendanceRecords').doc(selectedDate);
+            const memberKey = getDailyTotalMemberKey(record);
+            const batch = db.batch();
+            batch.delete(dateRef.collection('records').doc(`${memberKey}_arrival`));
+            batch.delete(dateRef.collection('records').doc(`${memberKey}_departure`));
+            batch.delete(dateRef.collection('dailyTotals').doc(memberKey));
+
+            batch.commit()
+                .then(() => {
+                    attendanceRecordManagementRows = attendanceRecordManagementRows.filter(item =>
+                        `${item.class || ''}_${item.studentId || ''}` !== selectedAttendanceRecordManagementKey
+                    );
+                    selectedAttendanceRecordManagementKey = null;
+                    renderAttendanceRecordsTable(attendanceRecordManagementRows, true);
+                    closeDeleteModal();
+                    showToast('已刪除該成員當日點名紀錄與服務時數');
+                })
+                .catch(error => {
+                    console.error('刪除點名紀錄失敗:', error);
+                    showToast('刪除失敗：' + error.message);
                 });
         }
 
@@ -842,6 +1216,20 @@
                 const mm = String(today.getMonth() + 1).padStart(2, '0');
                 const dd = String(today.getDate()).padStart(2, '0');
                 endDateInput.value = `${yyyy}-${mm}-${dd}`;
+            }
+        }
+
+        function handleHiddenManagementAccess() {
+            hiddenManagementClickCount += 1;
+            clearTimeout(hiddenManagementClickTimer);
+            hiddenManagementClickTimer = setTimeout(() => {
+                hiddenManagementClickCount = 0;
+            }, 2000);
+
+            if (hiddenManagementClickCount >= 5) {
+                hiddenManagementClickCount = 0;
+                clearTimeout(hiddenManagementClickTimer);
+                switchView('attendance-records-management');
             }
         }
 
@@ -1075,7 +1463,9 @@
             const attendanceView = document.getElementById('view-attendance');
             const attendanceRecordsView = document.getElementById('view-attendance-records');
             const hoursStatisticsView = document.getElementById('view-hours-statistics');
+            const attendanceRecordsManagementView = document.getElementById('view-attendance-records-management');
             const memberBtns = document.getElementById('member-action-btns');
+            const attendanceRecordManagementBtns = document.getElementById('attendance-record-management-action-btns');
             const headerTitle = document.getElementById('header-title');
 
             homeView.classList.add('hidden');
@@ -1083,6 +1473,9 @@
             attendanceView.classList.add('hidden');
             attendanceRecordsView.classList.add('hidden');
             hoursStatisticsView.classList.add('hidden');
+            attendanceRecordsManagementView.classList.add('hidden');
+            memberBtns.classList.add('hidden');
+            attendanceRecordManagementBtns.classList.add('hidden');
 
             if (viewName === 'members') {
                 membersView.classList.remove('hidden');
@@ -1106,6 +1499,17 @@
                 memberBtns.classList.add('hidden');
                 headerTitle.textContent = '時數統計';
                 setDefaultHoursStatisticsDates();
+            } else if (viewName === 'attendance-records-management') {
+                attendanceRecordsManagementView.classList.remove('hidden');
+                memberBtns.classList.add('hidden');
+                headerTitle.textContent = '點名紀錄管理';
+                setTodayAttendanceRecordsManagementDate();
+                syncAttendanceRecordStatusButtons();
+                attendanceRecordManagementRows = [];
+                attendanceRecordManagementResultsDate = '';
+                selectedAttendanceRecordManagementKey = null;
+                attendanceRecordManagementBtns.classList.remove('hidden');
+                renderAttendanceRecordsTable([], true);
             } else {
                 homeView.classList.remove('hidden');
                 memberBtns.classList.add('hidden');
@@ -1210,8 +1614,11 @@
     const target = members.find(m => m.docId === selectedMemberDocId);
     if (!target) return;
 
-    const modal = document.getElementById('delete-confirm-modal');
-    const text = document.getElementById('delete-confirm-text');
+            deleteTargetMode = 'member';
+            document.getElementById('delete-confirm-title').textContent = '確認刪除成員？';
+            document.getElementById('confirm-delete-btn').textContent = '確定刪除';
+            const modal = document.getElementById('delete-confirm-modal');
+            const text = document.getElementById('delete-confirm-text');
     // 這裡會把選到的成員名字與學號塞進對話框的文字中
     text.innerHTML = `確定要刪除成員【<strong class="text-sky-300">${target.class} ${target.name}</strong>（學號：${target.studentId}）】嗎？<br><span class="text-red-400">此操作將無法復原！</span>`;
 
