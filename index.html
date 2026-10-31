@@ -314,20 +314,22 @@
                         <button type="button" data-status="晚到" onclick="toggleAttendanceRecordStatus('晚到')" class="attendance-status-filter-btn rounded-xl border px-3 py-2 text-xs font-semibold transition active:scale-95 border-slate-700 bg-slate-800 text-slate-200">晚到</button>
                         <button type="button" data-status="早退" onclick="toggleAttendanceRecordStatus('早退')" class="attendance-status-filter-btn rounded-xl border px-3 py-2 text-xs font-semibold transition active:scale-95 border-slate-700 bg-slate-800 text-slate-200">早退</button>
                         <button type="button" data-status="簽退" onclick="toggleAttendanceRecordStatus('簽退')" class="attendance-status-filter-btn rounded-xl border px-3 py-2 text-xs font-semibold transition active:scale-95 border-slate-700 bg-slate-800 text-slate-200">簽退</button>
+                        <button type="button" data-status="請假" onclick="toggleAttendanceRecordStatus('請假')" class="attendance-status-filter-btn rounded-xl border px-3 py-2 text-xs font-semibold transition active:scale-95 border-slate-700 bg-slate-800 text-slate-200">請假</button>
+                        <button type="button" data-status="缺席" onclick="toggleAttendanceRecordStatus('缺席')" class="attendance-status-filter-btn rounded-xl border px-3 py-2 text-xs font-semibold transition active:scale-95 border-slate-700 bg-slate-800 text-slate-200">缺席</button>
                     </div>
                 </div>
             </div>
 
             <div class="glass-card rounded-2xl overflow-hidden border border-slate-800 shadow-xl">
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left text-sm">
+                <div class="overflow-hidden">
+                    <table class="w-full table-fixed text-left text-sm">
                         <thead class="bg-slate-800/80 text-xs font-semibold text-slate-300 uppercase border-b border-slate-700/60">
                             <tr>
-                                <th class="py-3 px-3 w-10 text-center">#</th>
-                                <th class="py-3 px-3">班級</th>
-                                <th class="py-3 px-3">學號</th>
-                                <th class="py-3 px-3">姓名</th>
-                                <th class="py-3 px-3">到校 / 離校</th>
+                                <th class="w-[8%] py-2 sm:py-3 px-1 text-center whitespace-nowrap">#</th>
+                                <th class="w-[22%] py-2 sm:py-3 px-1 whitespace-nowrap">班級</th>
+                                <th class="w-[22%] py-2 sm:py-3 px-1 whitespace-nowrap">學號</th>
+                                <th class="w-[18%] py-2 sm:py-3 px-1 whitespace-nowrap">姓名</th>
+                                <th class="w-[30%] py-2 sm:py-3 px-1 whitespace-nowrap"><span class="sm:hidden">狀態</span><span class="hidden sm:inline">到校 / 離校 / 請假</span></th>
                             </tr>
                         </thead>
                         <tbody id="attendance-records-table-body" class="divide-y divide-slate-800/60">
@@ -404,6 +406,7 @@
                         <button type="button" data-status="晚到" onclick="toggleAttendanceRecordStatus('晚到', true)" class="attendance-records-management-status-filter-btn rounded-xl border px-3 py-2 text-xs font-semibold transition active:scale-95 border-slate-700 bg-slate-800 text-slate-200">晚到</button>
                         <button type="button" data-status="早退" onclick="toggleAttendanceRecordStatus('早退', true)" class="attendance-records-management-status-filter-btn rounded-xl border px-3 py-2 text-xs font-semibold transition active:scale-95 border-slate-700 bg-slate-800 text-slate-200">早退</button>
                         <button type="button" data-status="簽退" onclick="toggleAttendanceRecordStatus('簽退', true)" class="attendance-records-management-status-filter-btn rounded-xl border px-3 py-2 text-xs font-semibold transition active:scale-95 border-slate-700 bg-slate-800 text-slate-200">簽退</button>
+                        <button type="button" data-status="請假" onclick="toggleAttendanceRecordStatus('請假', true)" class="attendance-records-management-status-filter-btn rounded-xl border px-3 py-2 text-xs font-semibold transition active:scale-95 border-slate-700 bg-slate-800 text-slate-200">請假</button>
                     </div>
                 </div>
             </div>
@@ -413,15 +416,15 @@
             </div>
 
             <div class="glass-card rounded-2xl overflow-hidden border border-slate-800 shadow-xl">
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left text-sm">
-                        <thead class="bg-slate-800/80 text-xs font-semibold text-slate-300 uppercase border-b border-slate-700/60">
+                <div class="overflow-hidden">
+                    <table class="w-full table-fixed text-left text-sm">
+                        <thead class="bg-slate-800/80 text-[9px] sm:text-xs font-semibold text-slate-300 uppercase border-b border-slate-700/60">
                             <tr>
-                                <th class="py-3 px-3 w-10 text-center">#</th>
-                                <th class="py-3 px-3">班級</th>
-                                <th class="py-3 px-3">學號</th>
-                                <th class="py-3 px-3">姓名</th>
-                                <th class="py-3 px-3">到校 / 離校</th>
+                                <th class="w-[8%] py-2 sm:py-3 px-1 text-center whitespace-nowrap">#</th>
+                                <th class="w-[22%] py-2 sm:py-3 px-1 whitespace-nowrap">班級</th>
+                                <th class="w-[22%] py-2 sm:py-3 px-1 whitespace-nowrap">學號</th>
+                                <th class="w-[18%] py-2 sm:py-3 px-1 whitespace-nowrap">姓名</th>
+                                <th class="w-[30%] py-2 sm:py-3 px-1 whitespace-nowrap"><span class="sm:hidden">狀態</span><span class="hidden sm:inline">到校 / 離校 / 請假</span></th>
                             </tr>
                         </thead>
                         <tbody id="attendance-records-management-table-body" class="divide-y divide-slate-800/60">
@@ -440,8 +443,11 @@
 
     <div id="attendance-status-modal" class="fixed inset-0 z-50 flex items-center justify-center px-4 bg-slate-950/70 backdrop-blur-sm opacity-0 pointer-events-none transition-opacity duration-200">
         <div class="glass-card w-full max-w-sm rounded-2xl border border-sky-500/40 p-5 shadow-2xl relative bg-slate-900/95">
-            <div class="text-center text-xl font-bold text-white mb-3">
+            <div class="relative text-center text-xl font-bold text-white mb-3">
                 總共 <span id="attendance-total-count" class="text-sky-400">0</span> 人
+                <button type="button" onclick="closeAttendanceStatusModal()" aria-label="返回點名頁" title="返回點名頁" class="absolute right-0 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
             </div>
 
             <div class="grid grid-cols-2 gap-2">
@@ -456,6 +462,9 @@
                 </button>
                 <button onclick="openAttendanceConfirmModal('簽退')" class="px-4 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-sm font-semibold transition active:scale-95">
                     簽退
+                </button>
+                <button onclick="openAttendanceConfirmModal('請假')" class="px-4 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-sm font-semibold transition active:scale-95">
+                    請假
                 </button>
             </div>
         </div>
@@ -547,6 +556,11 @@
                 </div>
             </div>
 
+            <div>
+                <div class="text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-400 mb-2">整日狀態</div>
+                <button id="attendance-record-edit-leave" type="button" onclick="selectAttendanceRecordEditStatus('leave', '請假')" class="attendance-record-edit-status-btn w-full rounded-xl border border-slate-700 bg-slate-800 px-3 py-2.5 text-xs font-semibold text-slate-200 transition">請假</button>
+            </div>
+
             <div class="flex justify-end gap-2 pt-2">
                 <button onclick="closeAttendanceRecordEditModal()" class="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 text-xs font-semibold hover:bg-slate-700 transition">取消</button>
                 <button onclick="saveAttendanceRecordEdit()" class="px-4 py-2 rounded-xl bg-violet-500 hover:bg-violet-400 text-slate-950 text-xs font-bold transition shadow-lg shadow-violet-500/20">確認</button>
@@ -613,12 +627,12 @@
         let members = [];
         let selectedMemberDocId = null;
         let selectedAttendanceDocIds = [];
-        let selectedAttendanceRecordStatuses = ['簽到', '晚到', '早退', '簽退'];
-        let selectedAttendanceRecordManagementStatuses = ['簽到', '晚到', '早退', '簽退'];
+        let selectedAttendanceRecordStatuses = ['簽到', '晚到', '早退', '簽退', '請假'];
+        let selectedAttendanceRecordManagementStatuses = ['簽到', '晚到', '早退', '簽退', '請假'];
         let attendanceRecordManagementRows = [];
         let attendanceRecordManagementResultsDate = '';
         let selectedAttendanceRecordManagementKey = null;
-        let attendanceRecordEditStatuses = { arrival: '', departure: '' };
+        let attendanceRecordEditStatuses = { arrival: '', departure: '', leave: '' };
         let deleteTargetMode = 'member';
         let currentModalMode = 'add';
         let hiddenManagementClickCount = 0;
@@ -728,20 +742,25 @@
                         renderAttendanceRecordsTable(attendanceRecordManagementRows, true);
                     };
                 }
-                const statusBadges = [record.arrivalStatus, record.departureStatus]
+                const badgeTextClass = isManagement ? 'text-[8px] sm:text-[10px]' : 'text-[9px] sm:text-[10px]';
+                const cellTextClass = isManagement ? 'text-[9px] sm:text-xs' : 'text-xs';
+                const statusBadges = [record.arrivalStatus, record.departureStatus, record.leaveStatus, record.absenceStatus]
                     .filter(Boolean)
                     .map(status => {
                         const statusClass = ['簽到', '簽退'].includes(status) ? 'bg-emerald-500/10 text-emerald-300 border-emerald-500/20' :
                             status === '晚到' ? 'bg-indigo-600/20 text-indigo-300 border-indigo-500' :
+                            status === '請假' ? 'bg-amber-500/10 text-amber-300 border-amber-500/20' :
+                            status === '缺席' ? 'bg-rose-500/10 text-rose-300 border-rose-500/20' :
                             'bg-rose-500/10 text-rose-300 border-rose-500/20';
-                        return `<span class="inline-flex px-1 sm:px-2 py-1 rounded-full text-[9px] sm:text-[10px] font-semibold border whitespace-nowrap ${statusClass}">${status}</span>`;
+                        const expandedWidthClass = !isManagement ? 'flex-1 justify-center' : '';
+                        return `<span class="inline-flex px-1 sm:px-2 py-1 rounded-full ${badgeTextClass} font-semibold border whitespace-nowrap ${expandedWidthClass} ${statusClass}">${status}</span>`;
                     }).join(' ');
                 tr.innerHTML = `
-                    <td class="py-3.5 px-3 text-center text-slate-500 font-mono text-xs">${index + 1}</td>
-                    <td class="py-3.5 px-3 font-medium text-slate-200 text-xs">${record.class || '-'}</td>
-                    <td class="py-3.5 px-3 text-slate-300 font-mono text-xs">${record.studentId || '-'}</td>
-                    <td class="py-3.5 px-3 font-semibold text-sky-300 text-xs">${record.name || '-'}</td>
-                    <td class="py-3.5 px-1 sm:px-3 text-xs whitespace-nowrap"><div class="flex flex-nowrap gap-1 sm:gap-1.5">${statusBadges || '-'}</div></td>
+                    <td class="py-2 sm:py-3.5 px-1 text-center text-slate-500 font-mono ${cellTextClass} whitespace-nowrap">${index + 1}</td>
+                    <td class="py-2 sm:py-3.5 px-1 font-medium text-slate-200 ${cellTextClass} whitespace-nowrap">${record.class || '-'}</td>
+                    <td class="py-2 sm:py-3.5 px-1 text-slate-300 font-mono ${cellTextClass} whitespace-nowrap">${record.studentId || '-'}</td>
+                    <td class="py-2 sm:py-3.5 px-1 font-semibold text-sky-300 ${cellTextClass} whitespace-nowrap">${record.name || '-'}</td>
+                    <td class="py-2 sm:py-3.5 px-1 ${cellTextClass} whitespace-nowrap"><div class="flex w-full flex-nowrap gap-0.5 sm:gap-1.5">${statusBadges || '-'}</div></td>
                 `;
                 tbody.appendChild(tr);
             });
@@ -780,16 +799,38 @@
                             studentId: data.studentId || '',
                             name: data.name || '',
                             arrivalStatus: '',
-                            departureStatus: ''
+                            departureStatus: '',
+                            leaveStatus: ''
                         };
                         if (['簽到', '晚到'].includes(data.status)) record.arrivalStatus = data.status;
                         if (['早退', '簽退'].includes(data.status)) record.departureStatus = data.status;
+                        if (data.status === '請假') record.leaveStatus = data.status;
                         recordsByMember.set(key, record);
                     });
 
+                    if (!isManagement) {
+                        members.forEach(member => {
+                            const key = `${member.class || ''}_${member.studentId || ''}`;
+                            const record = recordsByMember.get(key) || {
+                                class: member.class || '',
+                                studentId: member.studentId || '',
+                                name: member.name || '',
+                                arrivalStatus: '',
+                                departureStatus: '',
+                                leaveStatus: ''
+                            };
+                            if (!record.arrivalStatus && !record.departureStatus && !record.leaveStatus) {
+                                record.absenceStatus = '缺席';
+                            }
+                            recordsByMember.set(key, record);
+                        });
+                    }
+
                     const results = Array.from(recordsByMember.values()).filter(record =>
                         selectedStatuses.includes(record.arrivalStatus) ||
-                        selectedStatuses.includes(record.departureStatus)
+                        selectedStatuses.includes(record.departureStatus) ||
+                        selectedStatuses.includes(record.leaveStatus) ||
+                        selectedStatuses.includes(record.absenceStatus)
                     );
 
                     results.sort((a, b) => {
@@ -832,7 +873,8 @@
 
             attendanceRecordEditStatuses = {
                 arrival: record.arrivalStatus || '',
-                departure: record.departureStatus || ''
+                departure: record.departureStatus || '',
+                leave: record.leaveStatus || ''
             };
             document.getElementById('attendance-record-edit-member').textContent =
                 `${record.class}　${record.studentId}　${record.name}`;
@@ -843,7 +885,16 @@
         }
 
         function selectAttendanceRecordEditStatus(category, status) {
-            attendanceRecordEditStatuses[category] = status;
+            if (category === 'leave') {
+                attendanceRecordEditStatuses = {
+                    arrival: '',
+                    departure: '',
+                    leave: status
+                };
+            } else {
+                attendanceRecordEditStatuses[category] = status;
+                attendanceRecordEditStatuses.leave = '';
+            }
             syncAttendanceRecordEditStatusButtons();
         }
 
@@ -852,11 +903,13 @@
                 '簽到': 'attendance-record-edit-arrival-present',
                 '晚到': 'attendance-record-edit-arrival-late',
                 '早退': 'attendance-record-edit-departure-early',
-                '簽退': 'attendance-record-edit-departure-signout'
+                '簽退': 'attendance-record-edit-departure-signout',
+                '請假': 'attendance-record-edit-leave'
             };
             Object.entries(statusButtonMap).forEach(([status, buttonId]) => {
                 const button = document.getElementById(buttonId);
-                const category = ['簽到', '晚到'].includes(status) ? 'arrival' : 'departure';
+                const category = status === '請假' ? 'leave' :
+                    ['簽到', '晚到'].includes(status) ? 'arrival' : 'departure';
                 const isSelected = attendanceRecordEditStatuses[category] === status;
                 button.classList.toggle('border-violet-400', isSelected);
                 button.classList.toggle('bg-violet-500/20', isSelected);
@@ -890,7 +943,9 @@
                 showToast('找不到選取的點名紀錄，請重新查詢');
                 return;
             }
-            if (!attendanceRecordEditStatuses.arrival && !attendanceRecordEditStatuses.departure) {
+            if (!attendanceRecordEditStatuses.arrival &&
+                !attendanceRecordEditStatuses.departure &&
+                !attendanceRecordEditStatuses.leave) {
                 showToast('至少需要保留一種點名狀態');
                 return;
             }
@@ -905,6 +960,7 @@
             const recordsRef = dateRef.collection('records');
             const arrivalRef = recordsRef.doc(`${memberKey}_arrival`);
             const departureRef = recordsRef.doc(`${memberKey}_departure`);
+            const leaveRef = recordsRef.doc(`${memberKey}_leave`);
             const dailyTotalRef = dateRef.collection('dailyTotals').doc(memberKey);
             const batch = db.batch();
             const updatedAt = firebase.firestore.FieldValue.serverTimestamp();
@@ -914,38 +970,54 @@
                 updatedAt: updatedAt
             }, { merge: true });
 
-            [
-                { ref: arrivalRef, status: attendanceRecordEditStatuses.arrival, category: 'arrival' },
-                { ref: departureRef, status: attendanceRecordEditStatuses.departure, category: 'departure' }
-            ].forEach(item => {
-                if (!item.status) {
-                    batch.delete(item.ref);
-                    return;
-                }
-                batch.set(item.ref, {
+            if (attendanceRecordEditStatuses.leave) {
+                batch.delete(arrivalRef);
+                batch.delete(departureRef);
+                batch.delete(dailyTotalRef);
+                batch.set(leaveRef, {
                     class: record.class,
                     studentId: record.studentId,
                     name: record.name,
-                    status: item.status,
-                    category: item.category,
+                    status: '請假',
+                    category: 'leave',
                     date: selectedDate,
                     updatedAt: updatedAt
                 }, { merge: true });
-            });
+            } else {
+                batch.delete(leaveRef);
+                [
+                    { ref: arrivalRef, status: attendanceRecordEditStatuses.arrival, category: 'arrival' },
+                    { ref: departureRef, status: attendanceRecordEditStatuses.departure, category: 'departure' }
+                ].forEach(item => {
+                    if (!item.status) {
+                        batch.delete(item.ref);
+                        return;
+                    }
+                    batch.set(item.ref, {
+                        class: record.class,
+                        studentId: record.studentId,
+                        name: record.name,
+                        status: item.status,
+                        category: item.category,
+                        date: selectedDate,
+                        updatedAt: updatedAt
+                    }, { merge: true });
+                });
 
-            batch.set(dailyTotalRef, {
-                class: record.class,
-                studentId: record.studentId,
-                name: record.name,
-                arrivalStatus: attendanceRecordEditStatuses.arrival,
-                departureStatus: attendanceRecordEditStatuses.departure,
-                serviceHours: calculateDailyServiceHours(
-                    attendanceRecordEditStatuses.arrival,
-                    attendanceRecordEditStatuses.departure
-                ),
-                date: selectedDate,
-                updatedAt: updatedAt
-            }, { merge: true });
+                batch.set(dailyTotalRef, {
+                    class: record.class,
+                    studentId: record.studentId,
+                    name: record.name,
+                    arrivalStatus: attendanceRecordEditStatuses.arrival,
+                    departureStatus: attendanceRecordEditStatuses.departure,
+                    serviceHours: calculateDailyServiceHours(
+                        attendanceRecordEditStatuses.arrival,
+                        attendanceRecordEditStatuses.departure
+                    ),
+                    date: selectedDate,
+                    updatedAt: updatedAt
+                }, { merge: true });
+            }
 
             batch.commit()
                 .then(() => {
@@ -954,7 +1026,8 @@
                             ? {
                                 ...item,
                                 arrivalStatus: attendanceRecordEditStatuses.arrival,
-                                departureStatus: attendanceRecordEditStatuses.departure
+                                departureStatus: attendanceRecordEditStatuses.departure,
+                                leaveStatus: attendanceRecordEditStatuses.leave
                             }
                             : item
                     );
@@ -1022,6 +1095,7 @@
             const batch = db.batch();
             batch.delete(dateRef.collection('records').doc(`${memberKey}_arrival`));
             batch.delete(dateRef.collection('records').doc(`${memberKey}_departure`));
+            batch.delete(dateRef.collection('records').doc(`${memberKey}_leave`));
             batch.delete(dateRef.collection('dailyTotals').doc(memberKey));
 
             batch.commit()
@@ -1393,8 +1467,9 @@
                 return;
             }
 
-            const category = ['簽到', '晚到'].includes(statusText) ? 'arrival' : 'departure';
-            const otherCategory = category === 'arrival' ? 'departure' : 'arrival';
+            const category = statusText === '請假'
+                ? 'leave'
+                : ['簽到', '晚到'].includes(statusText) ? 'arrival' : 'departure';
             const attendanceDateRef = db.collection('attendanceRecords').doc(selectedDate);
             const recordsRef = attendanceDateRef.collection('records');
             const dateWrite = attendanceDateRef.set({
@@ -1408,8 +1483,32 @@
                 if (!member) return;
 
                 const memberKey = `${member.studentId}_${member.class}`.replace(/\s+/g, '');
+                if (category === 'leave') {
+                    const arrivalRef = recordsRef.doc(`${memberKey}_arrival`);
+                    const departureRef = recordsRef.doc(`${memberKey}_departure`);
+                    const leaveRef = recordsRef.doc(`${memberKey}_leave`);
+                    const dailyTotalRef = attendanceDateRef.collection('dailyTotals').doc(memberKey);
+                    recordWrites.push(db.runTransaction(async transaction => {
+                        transaction.delete(arrivalRef);
+                        transaction.delete(departureRef);
+                        transaction.delete(dailyTotalRef);
+                        transaction.set(leaveRef, {
+                            class: member.class,
+                            studentId: member.studentId,
+                            name: member.name,
+                            status: statusText,
+                            category: category,
+                            date: selectedDate,
+                            updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+                        }, { merge: true });
+                    }));
+                    return;
+                }
+
+                const otherCategory = category === 'arrival' ? 'departure' : 'arrival';
                 const recordRef = recordsRef.doc(`${memberKey}_${category}`);
                 const otherRecordRef = recordsRef.doc(`${memberKey}_${otherCategory}`);
+                const leaveRef = recordsRef.doc(`${memberKey}_leave`);
                 const dailyTotalRef = attendanceDateRef.collection('dailyTotals').doc(memberKey);
 
                 recordWrites.push(db.runTransaction(async transaction => {
@@ -1420,6 +1519,7 @@
                     const serviceHours = calculateDailyServiceHours(arrivalStatus, departureStatus);
                     const updatedAt = firebase.firestore.FieldValue.serverTimestamp();
 
+                    transaction.delete(leaveRef);
                     transaction.set(recordRef, {
                         class: member.class,
                         studentId: member.studentId,
