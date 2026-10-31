@@ -13,6 +13,7 @@
     
     <!-- Firebase SDKs (Compat Version for maximum reliability in iFrame/Single File) -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
 
     <script>
@@ -81,6 +82,42 @@
 </head>
 <body class="min-h-screen flex flex-col justify-between select-none pb-6">
 
+    <div id="auth-screen" class="hidden fixed inset-0 z-[100] flex items-center justify-center bg-slate-950 px-4 py-8">
+        <div class="glass-card w-full max-w-sm rounded-2xl border border-sky-500/20 p-6 shadow-2xl">
+            <div class="mb-5 flex items-center gap-3">
+                <div class="flex h-11 w-11 items-center justify-center rounded-xl bg-sky-500/10 text-sky-400 border border-sky-500/30">
+                    <i class="fa-solid fa-volume-high text-lg"></i>
+                </div>
+                <div>
+                    <h1 class="text-base font-bold text-white">DAPA 點名記錄系統</h1>
+                    <p class="mt-1 text-xs text-slate-400">請使用授權帳號登入</p>
+                </div>
+            </div>
+
+            <div id="auth-loading" class="py-6 text-center text-xs text-slate-300">
+                <i class="fa-solid fa-circle-notch fa-spin mr-2 text-sky-400"></i>正在確認登入狀態...
+            </div>
+
+            <form id="auth-login-form" onsubmit="handleLoginSubmit(event)" class="hidden space-y-4">
+                <div>
+                    <label for="auth-email" class="mb-1 block text-xs font-semibold text-slate-400">電子郵件</label>
+                    <input id="auth-email" type="email" autocomplete="username" required class="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2.5 text-sm text-slate-100 outline-none focus:border-sky-400">
+                </div>
+                <div>
+                    <label for="auth-password" class="mb-1 block text-xs font-semibold text-slate-400">密碼</label>
+                    <input id="auth-password" type="password" autocomplete="current-password" required class="w-full rounded-xl border border-slate-700 bg-slate-900 px-3 py-2.5 text-sm text-slate-100 outline-none focus:border-sky-400">
+                </div>
+                <p id="auth-login-error" class="hidden text-xs leading-relaxed text-red-400" role="alert"></p>
+                <div class="flex gap-2">
+                    <button type="button" onclick="cancelAuthLogin()" class="h-11 flex-1 rounded-xl border border-slate-700 text-sm font-semibold text-slate-300 transition hover:bg-slate-800">取消</button>
+                    <button id="auth-login-submit" type="submit" class="flex h-11 flex-1 items-center justify-center gap-2 rounded-xl bg-sky-500 text-sm font-bold text-slate-950 shadow-lg shadow-sky-500/20 transition hover:bg-sky-400 disabled:cursor-wait disabled:opacity-60">
+                        <i class="fa-solid fa-right-to-bracket"></i>登入
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- Header / 頁頭導覽列 -->
     <header class="sticky top-0 z-30 glass-header border-b border-slate-800 px-4 py-3 shadow-md">
         <div class="relative flex items-center justify-between">
@@ -106,6 +143,9 @@
                 <span id="cloud-status-badge" class="px-2 py-0.5 rounded-full text-[10px] font-medium bg-slate-800 text-slate-400 border border-slate-700 whitespace-nowrap">
                     <i class="fa-solid fa-circle-notch fa-spin mr-1"></i>連線中
                 </span>
+                <button id="auth-signout-btn" type="button" onclick="handleSignOut()" class="hidden h-8 w-8 items-center justify-center rounded-lg border border-slate-700 bg-slate-800 text-slate-300 transition hover:bg-slate-700 hover:text-white" title="登出" aria-label="登出">
+                    <i class="fa-solid fa-right-from-bracket text-xs"></i>
+                </button>
                     <div id="member-action-btns" class="hidden flex items-center gap-1.5">
                         <button onclick="triggerDeleteMember()" class="w-8 h-8 flex items-center justify-center rounded-lg bg-red-500/20 text-red-400 hover:bg-red-500/30 border border-red-500/30 active:scale-95 transition" title="刪除選取成員">
                             <i class="fa-solid fa-trash-can text-xs"></i>
@@ -654,7 +694,11 @@
 
         // 2. 初始化 Firebase
         let db = null;
+        let auth = null;
         let members = [];
+        let memberListenerUnsubscribe = null;
+        let pendingProtectedView = null;
+        let currentViewName = 'home';
         let hoursStatisticsDetailsByMember = new Map();
         let selectedHoursStatisticsMemberKey = null;
         let selectedMemberDocId = null;
@@ -673,6 +717,7 @@
         try {
             firebase.initializeApp(firebaseConfig);
             db = firebase.firestore();
+            auth = firebase.auth();
         } catch (err) {
             console.error("Firebase 初始化失敗:", err);
             updateStatusBadge(false, "初始化失敗");
@@ -1149,12 +1194,133 @@
         // 頁面初始化載入
         window.onload = function() {
             setTodayAttendanceDate();
-            if (db) {
-                initRealtimeSync();
-            } else {
-                alert("無法連線至 Firebase Services，請確認網路連線。");
+            if (!db || !auth) {
+                updateStatusBadge(false, 'Firebase 初始化失敗');
+                return;
             }
+
+            auth.onAuthStateChanged(user => {
+                const authScreen = document.getElementById('auth-screen');
+                const loginForm = document.getElementById('auth-login-form');
+                const authLoading = document.getElementById('auth-loading');
+                const signOutButton = document.getElementById('auth-signout-btn');
+                const loginError = document.getElementById('auth-login-error');
+
+                authLoading.classList.add('hidden');
+
+                if (user) {
+                    authScreen.classList.add('hidden');
+                    loginForm.classList.add('hidden');
+                    loginError.classList.add('hidden');
+                    signOutButton.classList.remove('hidden');
+                    signOutButton.classList.add('flex');
+                    if (pendingProtectedView) {
+                        const requestedView = pendingProtectedView;
+                        pendingProtectedView = null;
+                        switchView(requestedView);
+                    }
+                    if (!memberListenerUnsubscribe) initRealtimeSync();
+                    return;
+                }
+
+                signOutButton.classList.add('hidden');
+                signOutButton.classList.remove('flex');
+                if (isProtectedView(currentViewName)) {
+                    switchView('home');
+                }
+                if (!memberListenerUnsubscribe) initRealtimeSync();
+                if (pendingProtectedView) {
+                    authScreen.classList.remove('hidden');
+                    loginForm.classList.remove('hidden');
+                    loginError.classList.add('hidden');
+                } else {
+                    authScreen.classList.add('hidden');
+                    loginForm.classList.add('hidden');
+                }
+            }, error => {
+                console.error('Firebase 登入狀態檢查失敗:', error);
+                if (pendingProtectedView) {
+                    showAuthError(`無法確認登入狀態（${error.code || 'unknown'}）：${error.message || '未知錯誤'}`);
+                } else {
+                    updateStatusBadge(false, '登入狀態錯誤');
+                }
+            });
         };
+
+        function isProtectedView(viewName) {
+            return ['members', 'attendance', 'attendance-records-management'].includes(viewName);
+        }
+
+        function showAuthLogin(viewName) {
+            pendingProtectedView = viewName;
+            const authScreen = document.getElementById('auth-screen');
+            const authLoading = document.getElementById('auth-loading');
+            const loginForm = document.getElementById('auth-login-form');
+            const errorElement = document.getElementById('auth-login-error');
+            authLoading.classList.add('hidden');
+            loginForm.classList.remove('hidden');
+            errorElement.classList.add('hidden');
+            authScreen.classList.remove('hidden');
+            closeDrawer();
+            if (!db || !auth) {
+                showAuthError('Firebase 初始化失敗，請檢查網路連線與 Firebase 設定。');
+            }
+        }
+
+        function cancelAuthLogin() {
+            pendingProtectedView = null;
+            document.getElementById('auth-screen').classList.add('hidden');
+            document.getElementById('auth-login-form').classList.add('hidden');
+        }
+
+        function showAuthError(message) {
+            document.getElementById('auth-screen').classList.remove('hidden');
+            const loading = document.getElementById('auth-loading');
+            const loginForm = document.getElementById('auth-login-form');
+            const errorElement = document.getElementById('auth-login-error');
+            loading.classList.add('hidden');
+            loginForm.classList.remove('hidden');
+            errorElement.textContent = message;
+            errorElement.classList.remove('hidden');
+        }
+
+        async function handleLoginSubmit(event) {
+            event.preventDefault();
+            if (!auth) {
+                showAuthError('Firebase Authentication 尚未初始化。');
+                return;
+            }
+
+            const email = document.getElementById('auth-email').value.trim();
+            const passwordInput = document.getElementById('auth-password');
+            const submitButton = document.getElementById('auth-login-submit');
+            const errorElement = document.getElementById('auth-login-error');
+            submitButton.disabled = true;
+            submitButton.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i>登入中...';
+            errorElement.classList.add('hidden');
+
+            try {
+                await auth.signInWithEmailAndPassword(email, passwordInput.value);
+                passwordInput.value = '';
+            } catch (error) {
+                console.error('Firebase 登入失敗:', error);
+                errorElement.textContent = `登入失敗（${error.code || 'unknown'}）：${error.message || '請確認帳號與密碼。'}`;
+                errorElement.classList.remove('hidden');
+            } finally {
+                submitButton.disabled = false;
+                submitButton.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i>登入';
+            }
+        }
+
+        async function handleSignOut() {
+            if (!auth) return;
+            try {
+                await auth.signOut();
+            } catch (error) {
+                console.error('Firebase 登出失敗:', error);
+                showToast(`登出失敗：${error.message}`);
+            }
+        }
 
         // 更新 Header 連線指示燈
         function updateStatusBadge(isSuccess, text) {
@@ -1173,7 +1339,7 @@
 
         // 3. 雲端 Firestore 即時監聽與同步
         function initRealtimeSync() {
-            db.collection('members').onSnapshot(snapshot => {
+            memberListenerUnsubscribe = db.collection('members').onSnapshot(snapshot => {
                 members = [];
                 snapshot.forEach(doc => {
                     const data = doc.data();
@@ -1186,7 +1352,7 @@
                 });
 
                 // 如果雲端為空，寫入預設初始化資料
-                if (members.length === 0 && snapshot.metadata.fromCache === false) {
+                if (members.length === 0 && snapshot.metadata.fromCache === false && auth.currentUser) {
                     seedInitialData();
                     return;
                 }
@@ -1698,6 +1864,11 @@
 
         // 視圖切換
         function switchView(viewName) {
+            if (isProtectedView(viewName) && (!auth || !auth.currentUser)) {
+                showAuthLogin(viewName);
+                return;
+            }
+
             const homeView = document.getElementById('view-home');
             const membersView = document.getElementById('view-members');
             const attendanceView = document.getElementById('view-attendance');
@@ -1707,6 +1878,7 @@
             const memberBtns = document.getElementById('member-action-btns');
             const attendanceRecordManagementBtns = document.getElementById('attendance-record-management-action-btns');
             const headerTitle = document.getElementById('header-title');
+            currentViewName = viewName;
 
             homeView.classList.add('hidden');
             membersView.classList.add('hidden');
