@@ -252,6 +252,7 @@
                     </table>
                 </div>
             </div>
+
         </section>
 
         <!-- 視圖 3: 點名系統頁面 -->
@@ -362,26 +363,55 @@
                 </button>
             </div>
 
-            <div class="glass-card rounded-2xl overflow-hidden border border-slate-800 shadow-xl">
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left text-sm">
-                        <thead class="bg-slate-800/80 text-xs font-semibold text-slate-300 uppercase border-b border-slate-700/60">
-                            <tr>
-                                <th class="py-3 px-3 w-10 text-center">#</th>
-                                <th class="py-3 px-3">班級</th>
-                                <th class="py-3 px-3">學號</th>
-                                <th class="py-3 px-3">姓名</th>
-                                <th class="py-3 px-3 whitespace-nowrap">區間時數</th>
-                            </tr>
-                        </thead>
-                        <tbody id="hours-statistics-table-body" class="divide-y divide-slate-800/60">
-                            <tr>
-                                <td colspan="5" class="py-8 text-center text-xs text-slate-400">
-                                    選擇日期區間後點選「查詢」。
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
+            <div>
+                <p class="mb-2 px-1 text-[10px] text-slate-400">點選成員列可查看每日詳細紀錄</p>
+                <div class="glass-card rounded-2xl overflow-hidden border border-slate-800 shadow-xl">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm">
+                            <thead class="bg-slate-800/80 text-xs font-semibold text-slate-300 uppercase border-b border-slate-700/60">
+                                <tr>
+                                    <th class="py-3 px-3 w-10 text-center">#</th>
+                                    <th class="py-3 px-3">班級</th>
+                                    <th class="py-3 px-3">學號</th>
+                                    <th class="py-3 px-3">姓名</th>
+                                    <th class="py-3 px-3 whitespace-nowrap">區間時數</th>
+                                </tr>
+                            </thead>
+                            <tbody id="hours-statistics-table-body" class="divide-y divide-slate-800/60">
+                                <tr>
+                                    <td colspan="5" class="py-8 text-center text-xs text-slate-400">
+                                        選擇日期區間後點選「查詢」。
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div id="hours-statistics-detail" class="hidden fixed inset-0 z-[70] flex items-center justify-center px-4 py-6 bg-slate-950/70 backdrop-blur-sm">
+                <div class="glass-card flex max-h-full w-full max-w-md flex-col overflow-hidden rounded-2xl border border-lime-500/30 bg-slate-900/95 shadow-2xl">
+                    <div class="flex items-start justify-between gap-3 p-4 border-b border-slate-700/60">
+                        <div>
+                            <h3 id="hours-statistics-detail-title" class="text-sm font-bold text-lime-300"></h3>
+                            <p class="mt-1 text-[10px] text-slate-400">每日點名狀態與服務時數</p>
+                        </div>
+                        <button type="button" onclick="closeHoursStatisticsDetails()" aria-label="關閉每日明細" class="w-8 h-8 flex shrink-0 items-center justify-center rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition">
+                            <i class="fa-solid fa-xmark text-lg"></i>
+                        </button>
+                    </div>
+                    <div class="overflow-y-auto">
+                        <table class="w-full text-left text-sm">
+                            <thead class="sticky top-0 bg-slate-800 text-xs font-semibold text-slate-300 border-b border-slate-700/60">
+                                <tr>
+                                    <th class="py-2.5 px-3 whitespace-nowrap">日期</th>
+                                    <th class="py-2.5 px-3">狀態</th>
+                                    <th class="py-2.5 px-3 whitespace-nowrap">時數</th>
+                                </tr>
+                            </thead>
+                            <tbody id="hours-statistics-detail-body" class="divide-y divide-slate-800/60"></tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </section>
@@ -418,7 +448,7 @@
             <div class="glass-card rounded-2xl overflow-hidden border border-slate-800 shadow-xl">
                 <div class="overflow-hidden">
                     <table class="w-full table-fixed text-left text-sm">
-                        <thead class="bg-slate-800/80 text-[9px] sm:text-xs font-semibold text-slate-300 uppercase border-b border-slate-700/60">
+                        <thead class="bg-slate-800/80 text-xs font-semibold text-slate-300 uppercase border-b border-slate-700/60">
                             <tr>
                                 <th class="w-[8%] py-2 sm:py-3 px-1 text-center whitespace-nowrap">#</th>
                                 <th class="w-[22%] py-2 sm:py-3 px-1 whitespace-nowrap">班級</th>
@@ -625,6 +655,8 @@
         // 2. 初始化 Firebase
         let db = null;
         let members = [];
+        let hoursStatisticsDetailsByMember = new Map();
+        let selectedHoursStatisticsMemberKey = null;
         let selectedMemberDocId = null;
         let selectedAttendanceDocIds = [];
         let selectedAttendanceRecordStatuses = ['簽到', '晚到', '早退', '簽退', '請假'];
@@ -742,8 +774,8 @@
                         renderAttendanceRecordsTable(attendanceRecordManagementRows, true);
                     };
                 }
-                const badgeTextClass = isManagement ? 'text-[8px] sm:text-[10px]' : 'text-[9px] sm:text-[10px]';
-                const cellTextClass = isManagement ? 'text-[9px] sm:text-xs' : 'text-xs';
+                const badgeTextClass = 'text-[9px] sm:text-[10px]';
+                const cellTextClass = 'text-xs';
                 const statusBadges = [record.arrivalStatus, record.departureStatus, record.leaveStatus, record.absenceStatus]
                     .filter(Boolean)
                     .map(status => {
@@ -752,7 +784,7 @@
                             status === '請假' ? 'bg-amber-500/10 text-amber-300 border-amber-500/20' :
                             status === '缺席' ? 'bg-rose-500/10 text-rose-300 border-rose-500/20' :
                             'bg-rose-500/10 text-rose-300 border-rose-500/20';
-                        const expandedWidthClass = !isManagement ? 'flex-1 justify-center' : '';
+                        const expandedWidthClass = 'flex-1 justify-center';
                         return `<span class="inline-flex px-1 sm:px-2 py-1 rounded-full ${badgeTextClass} font-semibold border whitespace-nowrap ${expandedWidthClass} ${statusClass}">${status}</span>`;
                     }).join(' ');
                 tr.innerHTML = `
@@ -1311,6 +1343,7 @@
             const tbody = document.getElementById('hours-statistics-table-body');
             const startDate = document.getElementById('hours-statistics-start-date').value;
             const endDate = document.getElementById('hours-statistics-end-date').value;
+            const detailPanel = document.getElementById('hours-statistics-detail');
 
             if (!startDate || !endDate) {
                 showToast('請選擇開始與結束日期');
@@ -1320,6 +1353,10 @@
                 showToast('開始日期不可晚於結束日期');
                 return;
             }
+
+            selectedHoursStatisticsMemberKey = null;
+            hoursStatisticsDetailsByMember = new Map();
+            detailPanel.classList.add('hidden');
 
             if (!db) {
                 tbody.innerHTML = '<tr><td colspan="5" class="py-8 text-center text-xs text-red-400">Firebase 尚未初始化，無法讀取時數。</td></tr>';
@@ -1334,17 +1371,69 @@
                     .where('date', '<=', endDate)
                     .get();
                 const hoursByMember = new Map();
-                const dailyTotalSnapshots = await Promise.all(
-                    dateSnapshot.docs.map(dateDoc => dateDoc.ref.collection('dailyTotals').get())
+                const dailySnapshots = await Promise.all(
+                    dateSnapshot.docs.map(async dateDoc => {
+                        const [recordsSnapshot, totalsSnapshot] = await Promise.all([
+                            dateDoc.ref.collection('records').get(),
+                            dateDoc.ref.collection('dailyTotals').get()
+                        ]);
+                        return { date: dateDoc.id, recordsSnapshot, totalsSnapshot };
+                    })
                 );
-                dailyTotalSnapshots.forEach(snapshot => {
-                    snapshot.forEach(doc => {
+
+                dailySnapshots.forEach(({ date, recordsSnapshot, totalsSnapshot }) => {
+                    const recordsByMember = new Map();
+                    recordsSnapshot.forEach(doc => {
+                        const data = doc.data();
+                        const key = getDailyTotalMemberKey(data);
+                        if (!key || !data.status) return;
+
+                        const detail = recordsByMember.get(key) || {
+                            class: data.class || '',
+                            studentId: data.studentId || '',
+                            name: data.name || '',
+                            date,
+                            arrivalStatus: '',
+                            departureStatus: '',
+                            leaveStatus: '',
+                            serviceHours: 0
+                        };
+                        if (['簽到', '晚到'].includes(data.status)) detail.arrivalStatus = data.status;
+                        else if (['早退', '簽退'].includes(data.status)) detail.departureStatus = data.status;
+                        else if (data.status === '請假') detail.leaveStatus = data.status;
+                        recordsByMember.set(key, detail);
+                    });
+
+                    totalsSnapshot.forEach(doc => {
                         const data = doc.data();
                         const key = getDailyTotalMemberKey(data);
                         const hours = Number(data.serviceHours);
                         if (!key || !Number.isInteger(hours) || hours < 0) return;
-                        hoursByMember.set(key, (hoursByMember.get(key) || 0) + hours);
+
+                        const detail = recordsByMember.get(key) || {
+                            class: data.class || '',
+                            studentId: data.studentId || '',
+                            name: data.name || '',
+                            date,
+                            arrivalStatus: data.arrivalStatus || '',
+                            departureStatus: data.departureStatus || '',
+                            leaveStatus: '',
+                            serviceHours: 0
+                        };
+                        detail.serviceHours = hours;
+                        recordsByMember.set(key, detail);
                     });
+
+                    recordsByMember.forEach((detail, key) => {
+                        const memberDetails = hoursStatisticsDetailsByMember.get(key) || [];
+                        memberDetails.push(detail);
+                        hoursStatisticsDetailsByMember.set(key, memberDetails);
+                    });
+                });
+
+                hoursStatisticsDetailsByMember.forEach((details, key) => {
+                    details.sort((a, b) => a.date.localeCompare(b.date));
+                    hoursByMember.set(key, details.reduce((sum, detail) => sum + detail.serviceHours, 0));
                 });
 
                 tbody.innerHTML = '';
@@ -1357,6 +1446,15 @@
                 members.forEach((member, index) => {
                     const key = getDailyTotalMemberKey(member);
                     const row = document.createElement('tr');
+                    row.dataset.memberKey = key;
+                    row.className = `cursor-pointer transition-colors hover:bg-slate-800/50 ${selectedHoursStatisticsMemberKey === key ? 'selected-row' : ''}`;
+                    row.onclick = () => {
+                        selectedHoursStatisticsMemberKey = key;
+                        tbody.querySelectorAll('tr[data-member-key]').forEach(item => {
+                            item.classList.toggle('selected-row', item.dataset.memberKey === key);
+                        });
+                        renderHoursStatisticsDetails(member);
+                    };
                     row.innerHTML = `
                         <td class="py-3.5 px-3 text-center text-slate-500 font-mono text-xs">${index + 1}</td>
                         <td class="py-3.5 px-3 font-medium text-slate-200 text-xs"></td>
@@ -1371,6 +1469,7 @@
                 });
             } catch (error) {
                 console.error('時數統計讀取失敗:', error);
+                detailPanel.classList.add('hidden');
                 const row = document.createElement('tr');
                 const cell = document.createElement('td');
                 cell.colSpan = 5;
@@ -1379,6 +1478,47 @@
                 row.appendChild(cell);
                 tbody.replaceChildren(row);
             }
+        }
+
+        function renderHoursStatisticsDetails(member) {
+            const detailPanel = document.getElementById('hours-statistics-detail');
+            const detailTitle = document.getElementById('hours-statistics-detail-title');
+            const detailBody = document.getElementById('hours-statistics-detail-body');
+            const key = getDailyTotalMemberKey(member);
+            const details = hoursStatisticsDetailsByMember.get(key) || [];
+
+            detailTitle.textContent = `${member.class}　${member.studentId}　${member.name}`;
+            detailBody.innerHTML = '';
+            detailPanel.classList.remove('hidden');
+
+            if (!details.length) {
+                detailBody.innerHTML = '<tr><td colspan="3" class="py-6 text-center text-xs text-slate-400">所選日期區間內沒有點名紀錄。</td></tr>';
+                return;
+            }
+
+            details.forEach(detail => {
+                const row = document.createElement('tr');
+                const [, month, day] = detail.date.split('-');
+                const dateCell = document.createElement('td');
+                const statusCell = document.createElement('td');
+                const hoursCell = document.createElement('td');
+
+                dateCell.className = 'py-3 px-3 text-slate-300 text-xs whitespace-nowrap';
+                dateCell.textContent = `${Number(month)}/${Number(day)}`;
+                statusCell.className = 'py-3 px-3 text-slate-200 text-xs';
+                statusCell.textContent = detail.leaveStatus
+                    ? '請假'
+                    : [detail.arrivalStatus, detail.departureStatus].filter(Boolean).join(' ') || '未記錄狀態';
+                hoursCell.className = 'py-3 px-3 text-lime-300 font-bold text-xs whitespace-nowrap';
+                hoursCell.textContent = `${detail.serviceHours} 小時`;
+
+                row.append(dateCell, statusCell, hoursCell);
+                detailBody.appendChild(row);
+            });
+        }
+
+        function closeHoursStatisticsDetails() {
+            document.getElementById('hours-statistics-detail').classList.add('hidden');
         }
 
         function renderErrorRow(errMsg) {
