@@ -13,6 +13,7 @@
     
     <!-- Firebase SDKs (Compat Version for maximum reliability in iFrame/Single File) -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-check-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
 
@@ -722,6 +723,12 @@
             console.error("Firebase 初始化失敗:", err);
             updateStatusBadge(false, "初始化失敗");
         }
+
+        const appCheck = firebase.appCheck();
+        appCheck.activate(
+            new firebase.appCheck.ReCaptchaEnterpriseProvider('6LezDwsuAAAAAJB2Br_L1jewTAdDNTbByxndtiaB'),
+            true
+        );
 
         function setTodayAttendanceDate() {
             const attendanceDateInput = document.getElementById('attendance-date');
